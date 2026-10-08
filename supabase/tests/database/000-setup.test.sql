@@ -182,6 +182,29 @@ begin
   perform private.write_platform_audit('platform.fixture', 'restaurant', tests.id('restaurant_b'),
                                        tests.id('restaurant_b'), 'fixture');
 
+  -- billing (Phase 2): A is in its free trial; B is on a paid Silver plan with history
+  update public.restaurants set status = 'active' where id = tests.id('restaurant_b');
+  insert into public.subscription_periods (id, restaurant_id, kind, plan_id, starts_at, ends_at)
+  values (tests.id('period_a_trial'), tests.id('restaurant_a'), 'trial', (select id from public.plans where key = 'gold'),
+          now() - interval '10 days', now() + interval '50 days');
+  insert into public.trial_grants (phone_e164, user_id, restaurant_id, source)
+  values ('+96890000001', tests.id('owner_a'), tests.id('restaurant_a'), 'automatic'),
+         ('+96890000011', tests.id('owner_b'), tests.id('restaurant_b'), 'automatic');
+  insert into public.billing_invoices (id, number, restaurant_id, kind, status, plan_id, currency, lines,
+                                       plan_amount_minor, branch_unit_amount_minor, subtotal_minor, tax_label,
+                                       tax_rate_bp, tax_minor, total_minor, issued_at, due_at, paid_at)
+  values (tests.id('invoice_b'), 'GM-TEST-B-1', tests.id('restaurant_b'), 'new_period', 'paid',
+          (select id from public.plans where key = 'silver'), 'USD', '[]', 12000, 6000, 12000, 'VAT', 0, 0, 12000,
+          now() - interval '31 days', now() - interval '17 days', now() - interval '30 days');
+  insert into public.subscription_periods (id, restaurant_id, kind, plan_id, starts_at, ends_at, currency,
+                                           plan_amount_minor, branch_unit_amount_minor, invoice_id)
+  values (tests.id('period_b_paid'), tests.id('restaurant_b'), 'paid', (select id from public.plans where key = 'silver'),
+          now() - interval '30 days', now() - interval '30 days' + interval '1 year', 'USD', 12000, 6000, tests.id('invoice_b'));
+  insert into public.billing_payments (invoice_id, restaurant_id, amount_minor, currency, method, reference, received_at)
+  values (tests.id('invoice_b'), tests.id('restaurant_b'), 12000, 'USD', 'bank_transfer', 'FIXTURE-B-1', now() - interval '30 days');
+  insert into public.restaurant_entitlement_overrides (restaurant_id, feature_key, enabled, reason)
+  values (tests.id('restaurant_b'), 'promotions', true, 'fixture: sales promise');
+
   -- storage objects in both tenants and both buckets
   insert into storage.objects (bucket_id, name) values
     ('restaurant-public',  tests.id('restaurant_a') || '/logo.png'),

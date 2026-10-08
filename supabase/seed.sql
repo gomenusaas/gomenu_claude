@@ -76,4 +76,45 @@ begin
 
   insert into public.restaurant_notifications (restaurant_id, kind, required_permission, title, object_type, data)
   values (v_r1, 'staff.verified', 'staff.manage', 'New Staff Verified', 'membership', '{"name": "Maryam Al Kindi"}');
+
+  -- Billing (Phase 2): Muscat Grill is mid-trial; Sohar Café is on a paid Silver year.
+  insert into public.subscription_periods (restaurant_id, kind, plan_id, starts_at, ends_at, note)
+  select v_r1, 'trial', id, now() - interval '20 days', now() - interval '20 days' + interval '2 months', 'demo trial'
+    from public.plans where key = 'gold';
+  insert into public.trial_grants (phone_e164, user_id, restaurant_id, source)
+  values ('+96899000001', 'd1000000-0000-4000-8000-000000000001', v_r1, 'automatic'),
+         ('+96899000006', 'd1000000-0000-4000-8000-000000000006', v_r2, 'automatic');
+  update public.restaurants set status = 'active' where id = v_r2;
+  insert into public.billing_invoices (id, number, restaurant_id, kind, status, plan_id, currency, lines,
+                                       plan_amount_minor, branch_unit_amount_minor, subtotal_minor, tax_label,
+                                       tax_rate_bp, tax_minor, total_minor, issued_at, due_at, paid_at)
+  select 'd3000000-0000-4000-8000-000000000001', 'GM-DEMO-000001', v_r2, 'new_period', 'paid', id, 'USD',
+         '[{"description": "Silver plan, 12 months", "quantity": 1, "unit_amount_minor": 12000, "amount_minor": 12000}]',
+         12000, 6000, 12000, 'VAT', 0, 0, 12000, now() - interval '95 days', now() - interval '81 days', now() - interval '90 days'
+    from public.plans where key = 'silver';
+  insert into public.subscription_periods (restaurant_id, kind, plan_id, starts_at, ends_at, currency, plan_amount_minor,
+                                           branch_unit_amount_minor, invoice_id)
+  select v_r2, 'paid', id, now() - interval '90 days', now() - interval '90 days' + interval '1 year', 'USD', 12000, 6000,
+         'd3000000-0000-4000-8000-000000000001'
+    from public.plans where key = 'silver';
+  insert into public.billing_payments (invoice_id, restaurant_id, amount_minor, currency, method, reference, received_at)
+  values ('d3000000-0000-4000-8000-000000000001', v_r2, 12000, 'USD', 'bank_transfer', 'DEMO-TRANSFER-1', now() - interval '90 days');
+
+  -- Platform staff (demo). Email + password; an authenticator app is enrolled on first login.
+  for r in
+    select * from (values
+      ('d1000000-0000-4000-8000-000000000091'::uuid, 'GoMenu Root (Demo)',    'root@demo.gomenu.test',    'super_admin'),
+      ('d1000000-0000-4000-8000-000000000092'::uuid, 'GoMenu Finance (Demo)', 'finance@demo.gomenu.test', 'finance')
+    ) as t(id, name, email, role)
+  loop
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+                            raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token,
+                            recovery_token, email_change_token_new, email_change)
+    values (v_instance, r.id, 'authenticated', 'authenticated', r.email, v_password, now(),
+            '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', r.name), now(), now(), '', '', '', '');
+    insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at, last_sign_in_at)
+    values (gen_random_uuid(), r.id, r.id::text, 'email',
+            jsonb_build_object('sub', r.id::text, 'email', r.email, 'email_verified', true), now(), now(), now());
+    insert into public.platform_staff (user_id, role) values (r.id, r.role::public.platform_role);
+  end loop;
 end $$;

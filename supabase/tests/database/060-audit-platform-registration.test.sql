@@ -50,10 +50,10 @@ reset role;
 
 -- Owner registration
 select tests.authenticate_as('unverified');
-select throws_ok($s$select public.create_restaurant('No Phone Cafe', 'no-phone-cafe')$s$, '42501', null,
+select throws_ok($s$select public.create_restaurant('No Phone Cafe', 'no-phone-cafe', null, true)$s$, '42501', null,
                  'a user without a verified phone cannot create a restaurant');
 select tests.authenticate_as('outsider');
-select lives_ok($s$select public.create_restaurant('Outsider Grill', 'outsider-grill', 'Muscat')$s$,
+select lives_ok($s$select public.create_restaurant('Outsider Grill', 'outsider-grill', 'Muscat', true)$s$,
                 'a verified user creates a restaurant');
 select is((public.get_my_context()) ->> 'next', 'restaurant', 'routing sends the new owner to their restaurant');
 select is(tests.count_rows('public.restaurants', format('id = %L', tests.id('restaurant_a'))), 0::bigint,
