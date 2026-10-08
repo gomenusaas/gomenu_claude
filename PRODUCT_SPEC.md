@@ -1,7 +1,7 @@
 # GoMenu — Product Specification
 
 ## 0. How to use this document
-This is the source of truth for GoMenu's business rules. Build in the phases in §18. If a technical constraint seems to require changing a business rule in this document, stop and explain the conflict instead of changing it silently. The UI design reference is the Claude Design prototype [link/export].
+This is the source of truth for GoMenu's business rules. Build in the phases in §18. If a technical constraint seems to require changing a business rule in this document, stop and explain the conflict instead of changing it silently. The UI design reference is the Claude Design prototype [Undecided — ask me].
 
 ## 1. Product
 GoMenu is a multi-tenant SaaS giving restaurants a mobile-first website, digital/QR menu, table ordering, waiter and kitchen operations, payments via their own gateway, loyalty, analytics, and reporting. Diners have one universal account across restaurants. A consumer Discovery app comes later; its admin and data model are built now but stay private.
@@ -50,7 +50,7 @@ Shared devices: staff switcher (name → PIN), auto-lock, device revocation; eve
 Each restaurant is a tenant. A restaurant can never read another's staff, orders, payments, customers, loyalty, reports, settings, or internal data. A restaurant sees only a diner's activity with that restaurant. Restaurants can't read Discovery internals.
 
 ## 6. Plans and billing
-- Annual billing only. Silver $120/yr, Gold $180/yr (shown as $10/$15 per month equivalent). Extra branch $60/yr. All prices configurable in Platform Admin. [Decision: billing currency USD vs OMR]
+- Annual billing only. Silver $120/yr, Gold $180/yr (shown as $10/$15 per month equivalent). Extra branch $60/yr. All prices configurable in Platform Admin. [Undecided — ask me]
 - First-time restaurants get 2 months free with no card, once per restaurant.
 - Silver: website, QR menu, AI menu creation, unlimited categories/items, 5 images + 1 video per item, gallery, free templates, custom domain, social/WhatsApp, sharing, unlimited staff and roles, basic analytics, 1 branch, ordering, gateway connectivity, core loyalty.
 - Gold: Silver + promotions/carousel, Frames, premium templates, advanced analytics and reports, priority WhatsApp support.
@@ -103,7 +103,7 @@ Restaurants toggle online ordering and online payment independently. With orderi
 **Payment timing** (per service type): pay before serving or after. Suggested defaults: table after, car before, pickup before preparation. When confirmation is required, payment is allowed only after confirmation.
 
 ## 11. Payments
-- Each restaurant connects its own merchant gateway; funds settle to the restaurant, and GoMenu doesn't hold customer funds. [THAWANI gateway, Omani Company]
+- Each restaurant connects its own merchant gateway; funds settle to the restaurant, and GoMenu doesn't hold customer funds. [Undecided — ask me]
 - Platform manages gateways (country, currency, sandbox/production, methods, webhooks, status: Draft, Testing, Active, Disabled, Retired). Restaurants see only gateways eligible for their market, plan, and status. Restaurant connection statuses: Not Connected, Connected, Verification Required, Error, Disabled.
 - Methods: cards, Apple Pay, Google Pay, local methods; offline (cash, card at restaurant) is recorded separately.
 - Payment success is confirmed only by verified, idempotent webhooks, never the browser redirect.
