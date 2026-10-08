@@ -2,7 +2,8 @@ import { Alert, Badge, Button, Card, CardContent, CardHeader, CardTitle, Field, 
 import { assignRole, cancelInvitation, inviteStaff, resendInvitation } from "@/app/actions/staff";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
-import type { MembershipStatus } from "@/lib/auth/context";
+import { notFound } from "next/navigation";
+import { requireUser, type MembershipStatus } from "@/lib/auth/context";
 import { getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,6 +14,8 @@ const tone = (s: MembershipStatus) =>
 
 export default async function StaffPage({ params }: { params: Promise<{ restaurantId: string }> }) {
   const { restaurantId } = await params;
+  const ctx = await requireUser();
+  if (!ctx.active_memberships?.some((m) => m.restaurant_id === restaurantId)) notFound();
   const { t } = await getDictionary();
   const supabase = await createClient();
 

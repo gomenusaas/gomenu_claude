@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@gomenu/ui";
+import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/context";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
@@ -6,7 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 export default async function RestaurantOverview({ params }: { params: Promise<{ restaurantId: string }> }) {
   const { restaurantId } = await params;
   const ctx = await requireUser();
-  const membership = ctx.active_memberships!.find((m) => m.restaurant_id === restaurantId)!;
+  // Pages render concurrently with layouts, so each page re-checks membership itself.
+  const membership = ctx.active_memberships?.find((m) => m.restaurant_id === restaurantId);
+  if (!membership) notFound();
   const { t } = await getDictionary();
   const supabase = await createClient();
   // RLS returns only the branches in this person's scope.
