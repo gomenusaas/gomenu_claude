@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.vercel
+.DS_Store
+playwright-report/
+test-results/
+supabase/.temp/
+supabase/.branches/
