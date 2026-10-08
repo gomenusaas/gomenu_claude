@@ -23,7 +23,59 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "audit_events": {
+            "ai_credit_ledger": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"delta": number,"id": string,"invoice_id": string | null,"job_id": string | null,"note": string | null,"reason": Database["public"]['Enums']["ai_credit_reason"],"restaurant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"delta": number,"id"?: string,"invoice_id"?: string | null,"job_id"?: string | null,"note"?: string | null,"reason": Database["public"]['Enums']["ai_credit_reason"],"restaurant_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"delta"?: number,"id"?: string,"invoice_id"?: string | null,"job_id"?: string | null,"note"?: string | null,"reason"?: Database["public"]['Enums']["ai_credit_reason"],"restaurant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_credit_ledger_invoice_id_fkey"
+      columns: ["invoice_id"]
+isOneToOne: false
+      referencedRelation: "billing_invoices"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ai_credit_ledger_job_fk"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "ai_jobs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ai_credit_ledger_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ai_jobs": {
+                  Row: {
+                    "completed_at": string | null,"created_at": string,"created_by": string | null,"credits_charged": number,"error": string | null,"id": string,"item_count": number,"kind": Database["public"]['Enums']["ai_job_kind"],"restaurant_id": string,"result": Json | null,"scope": NonNullable<Json>,"source_locale": string | null,"source_path": string | null,"status": Database["public"]['Enums']["ai_job_status"],"target_locale": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "completed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"credits_charged"?: number,"error"?: string | null,"id"?: string,"item_count"?: number,"kind": Database["public"]['Enums']["ai_job_kind"],"restaurant_id": string,"result"?: Json | null,"scope"?: NonNullable<Json>,"source_locale"?: string | null,"source_path"?: string | null,"status"?: Database["public"]['Enums']["ai_job_status"],"target_locale"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "completed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"credits_charged"?: number,"error"?: string | null,"id"?: string,"item_count"?: number,"kind"?: Database["public"]['Enums']["ai_job_kind"],"restaurant_id"?: string,"result"?: Json | null,"scope"?: NonNullable<Json>,"source_locale"?: string | null,"source_path"?: string | null,"status"?: Database["public"]['Enums']["ai_job_status"],"target_locale"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_jobs_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"audit_events": {
                   Row: {
                     "action": string,"actor_email": string | null,"actor_membership_id": string | null,"actor_name": string | null,"actor_phone_e164": string | null,"actor_role_key": string | null,"actor_user_id": string | null,"after": Json | null,"before": Json | null,"branch_id": string | null,"device_id": string | null,"id": string,"ip_address": string | null,"metadata": NonNullable<Json>,"object_id": string | null,"object_type": string,"occurred_at": string,"restaurant_id": string | null,"user_agent": string | null
                   }
@@ -39,14 +91,14 @@ export type Database = {
                   ]
                 },"billing_invoices": {
                   Row: {
-                    "branch_unit_amount_minor": number,"created_at": string,"created_by": string | null,"currency": string,"due_at": string,"extra_branches": number,"id": string,"issued_at": string,"kind": Database["public"]['Enums']["invoice_kind"],"lines": NonNullable<Json>,"number": string,"paid_at": string | null,"plan_amount_minor": number,"plan_id": string,"restaurant_id": string,"status": Database["public"]['Enums']["invoice_status"],"subtotal_minor": number,"tax_label": string,"tax_minor": number,"tax_rate_bp": number,"total_minor": number,"updated_at": string,"void_reason": string | null,"voided_at": string | null
+                    "ai_credits": number | null,"branch_unit_amount_minor": number,"created_at": string,"created_by": string | null,"currency": string,"due_at": string,"extra_branches": number,"id": string,"issued_at": string,"kind": Database["public"]['Enums']["invoice_kind"],"lines": NonNullable<Json>,"number": string,"paid_at": string | null,"plan_amount_minor": number,"plan_id": string | null,"restaurant_id": string,"status": Database["public"]['Enums']["invoice_status"],"subtotal_minor": number,"tax_label": string,"tax_minor": number,"tax_rate_bp": number,"total_minor": number,"updated_at": string,"void_reason": string | null,"voided_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_unit_amount_minor": number,"created_at"?: string,"created_by"?: string | null,"currency": string,"due_at": string,"extra_branches"?: number,"id"?: string,"issued_at"?: string,"kind": Database["public"]['Enums']["invoice_kind"],"lines": NonNullable<Json>,"number": string,"paid_at"?: string | null,"plan_amount_minor": number,"plan_id": string,"restaurant_id": string,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal_minor": number,"tax_label": string,"tax_minor": number,"tax_rate_bp": number,"total_minor": number,"updated_at"?: string,"void_reason"?: string | null,"voided_at"?: string | null
+                    "ai_credits"?: number | null,"branch_unit_amount_minor": number,"created_at"?: string,"created_by"?: string | null,"currency": string,"due_at": string,"extra_branches"?: number,"id"?: string,"issued_at"?: string,"kind": Database["public"]['Enums']["invoice_kind"],"lines": NonNullable<Json>,"number": string,"paid_at"?: string | null,"plan_amount_minor": number,"plan_id"?: string | null,"restaurant_id": string,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal_minor": number,"tax_label": string,"tax_minor": number,"tax_rate_bp": number,"total_minor": number,"updated_at"?: string,"void_reason"?: string | null,"voided_at"?: string | null
                   }
                   Update: {
-                    "branch_unit_amount_minor"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"due_at"?: string,"extra_branches"?: number,"id"?: string,"issued_at"?: string,"kind"?: Database["public"]['Enums']["invoice_kind"],"lines"?: NonNullable<Json>,"number"?: string,"paid_at"?: string | null,"plan_amount_minor"?: number,"plan_id"?: string,"restaurant_id"?: string,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal_minor"?: number,"tax_label"?: string,"tax_minor"?: number,"tax_rate_bp"?: number,"total_minor"?: number,"updated_at"?: string,"void_reason"?: string | null,"voided_at"?: string | null
+                    "ai_credits"?: number | null,"branch_unit_amount_minor"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"due_at"?: string,"extra_branches"?: number,"id"?: string,"issued_at"?: string,"kind"?: Database["public"]['Enums']["invoice_kind"],"lines"?: NonNullable<Json>,"number"?: string,"paid_at"?: string | null,"plan_amount_minor"?: number,"plan_id"?: string | null,"restaurant_id"?: string,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal_minor"?: number,"tax_label"?: string,"tax_minor"?: number,"tax_rate_bp"?: number,"total_minor"?: number,"updated_at"?: string,"void_reason"?: string | null,"voided_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -109,16 +161,68 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"branches": {
+                },"branch_hours": {
                   Row: {
-                    "address": string | null,"archived_at": string | null,"created_at": string,"id": string,"is_active": boolean,"name": string,"phone_e164": string | null,"restaurant_id": string,"updated_at": string
+                    "branch_id": string,"closes_at": string,"day_of_week": number,"id": string,"opens_at": string,"restaurant_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address"?: string | null,"archived_at"?: string | null,"created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"phone_e164"?: string | null,"restaurant_id": string,"updated_at"?: string
+                    "branch_id": string,"closes_at": string,"day_of_week": number,"id"?: string,"opens_at": string,"restaurant_id": string
                   }
                   Update: {
-                    "address"?: string | null,"archived_at"?: string | null,"created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"phone_e164"?: string | null,"restaurant_id"?: string,"updated_at"?: string
+                    "branch_id"?: string,"closes_at"?: string,"day_of_week"?: number,"id"?: string,"opens_at"?: string,"restaurant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "branch_hours_branch_id_restaurant_id_fkey"
+      columns: ["branch_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"branch_menu_overrides": {
+                  Row: {
+                    "branch_id": string,"category_id": string | null,"id": string,"is_available": boolean,"is_hidden": boolean,"item_id": string | null,"restaurant_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"category_id"?: string | null,"id"?: string,"is_available"?: boolean,"is_hidden"?: boolean,"item_id"?: string | null,"restaurant_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "branch_id"?: string,"category_id"?: string | null,"id"?: string,"is_available"?: boolean,"is_hidden"?: boolean,"item_id"?: string | null,"restaurant_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "branch_menu_overrides_branch_id_restaurant_id_fkey"
+      columns: ["branch_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "branch_menu_overrides_category_id_restaurant_id_fkey"
+      columns: ["category_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_categories"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "branch_menu_overrides_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"branches": {
+                  Row: {
+                    "address": string | null,"archived_at": string | null,"created_at": string,"id": string,"is_active": boolean,"latitude": number | null,"longitude": number | null,"maps_url": string | null,"name": string,"override_until": string | null,"phone_e164": string | null,"restaurant_id": string,"sort": number,"status_override": Database["public"]['Enums']["branch_status_override"],"updated_at": string,"whatsapp_e164": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address"?: string | null,"archived_at"?: string | null,"created_at"?: string,"id"?: string,"is_active"?: boolean,"latitude"?: number | null,"longitude"?: number | null,"maps_url"?: string | null,"name": string,"override_until"?: string | null,"phone_e164"?: string | null,"restaurant_id": string,"sort"?: number,"status_override"?: Database["public"]['Enums']["branch_status_override"],"updated_at"?: string,"whatsapp_e164"?: string | null
+                  }
+                  Update: {
+                    "address"?: string | null,"archived_at"?: string | null,"created_at"?: string,"id"?: string,"is_active"?: boolean,"latitude"?: number | null,"longitude"?: number | null,"maps_url"?: string | null,"name"?: string,"override_until"?: string | null,"phone_e164"?: string | null,"restaurant_id"?: string,"sort"?: number,"status_override"?: Database["public"]['Enums']["branch_status_override"],"updated_at"?: string,"whatsapp_e164"?: string | null
                   }
                   Relationships: [
                     {
@@ -142,6 +246,26 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"gallery_media": {
+                  Row: {
+                    "bytes": number | null,"caption": NonNullable<Json>,"created_at": string,"created_by": string | null,"height": number | null,"id": string,"is_active": boolean,"kind": Database["public"]['Enums']["media_kind"],"poster_path": string | null,"restaurant_id": string,"sort": number,"storage_path": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bytes"?: number | null,"caption"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"height"?: number | null,"id"?: string,"is_active"?: boolean,"kind": Database["public"]['Enums']["media_kind"],"poster_path"?: string | null,"restaurant_id": string,"sort"?: number,"storage_path": string,"width"?: number | null
+                  }
+                  Update: {
+                    "bytes"?: number | null,"caption"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"height"?: number | null,"id"?: string,"is_active"?: boolean,"kind"?: Database["public"]['Enums']["media_kind"],"poster_path"?: string | null,"restaurant_id"?: string,"sort"?: number,"storage_path"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "gallery_media_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"membership_branches": {
                   Row: {
@@ -227,6 +351,132 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"menu_categories": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"created_by": string | null,"description": NonNullable<Json>,"i18n_meta": NonNullable<Json>,"id": string,"is_active": boolean,"name": NonNullable<Json>,"restaurant_id": string,"sort": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: NonNullable<Json>,"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_active"?: boolean,"name": NonNullable<Json>,"restaurant_id": string,"sort"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"description"?: NonNullable<Json>,"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_active"?: boolean,"name"?: NonNullable<Json>,"restaurant_id"?: string,"sort"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_categories_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"menu_item_media": {
+                  Row: {
+                    "bytes": number | null,"created_at": string,"created_by": string | null,"height": number | null,"id": string,"is_cover": boolean,"item_id": string,"kind": Database["public"]['Enums']["media_kind"],"poster_path": string | null,"restaurant_id": string,"sort": number,"storage_path": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "bytes"?: number | null,"created_at"?: string,"created_by"?: string | null,"height"?: number | null,"id"?: string,"is_cover"?: boolean,"item_id": string,"kind": Database["public"]['Enums']["media_kind"],"poster_path"?: string | null,"restaurant_id": string,"sort"?: number,"storage_path": string,"width"?: number | null
+                  }
+                  Update: {
+                    "bytes"?: number | null,"created_at"?: string,"created_by"?: string | null,"height"?: number | null,"id"?: string,"is_cover"?: boolean,"item_id"?: string,"kind"?: Database["public"]['Enums']["media_kind"],"poster_path"?: string | null,"restaurant_id"?: string,"sort"?: number,"storage_path"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_item_media_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"menu_item_variants": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"i18n_meta": NonNullable<Json>,"id": string,"is_default": boolean,"item_id": string,"name": NonNullable<Json>,"price_minor": number,"restaurant_id": string,"sort": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_default"?: boolean,"item_id": string,"name": NonNullable<Json>,"price_minor": number,"restaurant_id": string,"sort"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_default"?: boolean,"item_id"?: string,"name"?: NonNullable<Json>,"price_minor"?: number,"restaurant_id"?: string,"sort"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_item_variants_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"menu_items": {
+                  Row: {
+                    "allergens": (Database["public"]['Enums']["allergen"])[],"archived_at": string | null,"calories": number | null,"category_id": string,"created_at": string,"created_by": string | null,"description": NonNullable<Json>,"dietary_tags": (Database["public"]['Enums']["dietary_tag"])[],"i18n_meta": NonNullable<Json>,"id": string,"is_active": boolean,"is_available": boolean,"name": NonNullable<Json>,"price_minor": number,"restaurant_id": string,"sort": number,"spice_level": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "allergens"?: (Database["public"]['Enums']["allergen"])[],"archived_at"?: string | null,"calories"?: number | null,"category_id": string,"created_at"?: string,"created_by"?: string | null,"description"?: NonNullable<Json>,"dietary_tags"?: (Database["public"]['Enums']["dietary_tag"])[],"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_active"?: boolean,"is_available"?: boolean,"name": NonNullable<Json>,"price_minor": number,"restaurant_id": string,"sort"?: number,"spice_level"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "allergens"?: (Database["public"]['Enums']["allergen"])[],"archived_at"?: string | null,"calories"?: number | null,"category_id"?: string,"created_at"?: string,"created_by"?: string | null,"description"?: NonNullable<Json>,"dietary_tags"?: (Database["public"]['Enums']["dietary_tag"])[],"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_active"?: boolean,"is_available"?: boolean,"name"?: NonNullable<Json>,"price_minor"?: number,"restaurant_id"?: string,"sort"?: number,"spice_level"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_items_category_id_restaurant_id_fkey"
+      columns: ["category_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_categories"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "menu_items_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"menu_option_groups": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"i18n_meta": NonNullable<Json>,"id": string,"item_id": string,"max_select": number | null,"min_select": number,"name": NonNullable<Json>,"restaurant_id": string,"sort": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"item_id": string,"max_select"?: number | null,"min_select"?: number,"name": NonNullable<Json>,"restaurant_id": string,"sort"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"item_id"?: string,"max_select"?: number | null,"min_select"?: number,"name"?: NonNullable<Json>,"restaurant_id"?: string,"sort"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_option_groups_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"menu_options": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"group_id": string,"i18n_meta": NonNullable<Json>,"id": string,"is_available": boolean,"name": NonNullable<Json>,"price_delta_minor": number,"restaurant_id": string,"sort": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"group_id": string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_available"?: boolean,"name": NonNullable<Json>,"price_delta_minor"?: number,"restaurant_id": string,"sort"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"group_id"?: string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"is_available"?: boolean,"name"?: NonNullable<Json>,"price_delta_minor"?: number,"restaurant_id"?: string,"sort"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_options_group_id_restaurant_id_fkey"
+      columns: ["group_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_option_groups"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
                 },"permissions": {
                   Row: {
                     "category": string,"description": string,"key": string,"owner_only": boolean
@@ -295,6 +545,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"platform_languages": {
+                  Row: {
+                    "code": string,"dir": string,"is_enabled": boolean,"name": string,"native_name": string,"sort": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"dir"?: string,"is_enabled"?: boolean,"name": string,"native_name": string,"sort"?: number
+                  }
+                  Update: {
+                    "code"?: string,"dir"?: string,"is_enabled"?: boolean,"name"?: string,"native_name"?: string,"sort"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"platform_settings": {
                   Row: {
                     "description": string,"key": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
@@ -351,6 +615,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"restaurant_domains": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"error": string | null,"hostname": string,"id": string,"is_primary": boolean,"kind": string,"last_checked_at": string | null,"restaurant_id": string,"status": Database["public"]['Enums']["domain_status"],"updated_at": string,"verification": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"error"?: string | null,"hostname": string,"id"?: string,"is_primary"?: boolean,"kind": string,"last_checked_at"?: string | null,"restaurant_id": string,"status"?: Database["public"]['Enums']["domain_status"],"updated_at"?: string,"verification"?: NonNullable<Json>
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"error"?: string | null,"hostname"?: string,"id"?: string,"is_primary"?: boolean,"kind"?: string,"last_checked_at"?: string | null,"restaurant_id"?: string,"status"?: Database["public"]['Enums']["domain_status"],"updated_at"?: string,"verification"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "restaurant_domains_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"restaurant_entitlement_overrides": {
                   Row: {
                     "created_at": string,"created_by": string | null,"enabled": boolean,"expires_at": string | null,"feature_key": string,"limit_value": number | null,"reason": string,"restaurant_id": string
@@ -371,6 +655,32 @@ isOneToOne: false
       referencedColumns: ["key"]
     },{
       foreignKeyName: "restaurant_entitlement_overrides_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"restaurant_languages": {
+                  Row: {
+                    "created_at": string,"locale": string,"restaurant_id": string,"sort": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"locale": string,"restaurant_id": string,"sort"?: number
+                  }
+                  Update: {
+                    "created_at"?: string,"locale"?: string,"restaurant_id"?: string,"sort"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "restaurant_languages_locale_fkey"
+      columns: ["locale"]
+isOneToOne: false
+      referencedRelation: "platform_languages"
+      referencedColumns: ["code"]
+    },{
+      foreignKeyName: "restaurant_languages_restaurant_id_fkey"
       columns: ["restaurant_id"]
 isOneToOne: false
       referencedRelation: "restaurants"
@@ -409,16 +719,36 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"restaurants": {
+                },"restaurant_slug_history": {
                   Row: {
-                    "archived_at": string | null,"country_code": string,"created_at": string,"created_by": string | null,"currency": string,"default_locale": string,"id": string,"invite_ttl_hours": number,"name": string,"onboarding_completed_at": string | null,"platform_hold": boolean,"platform_hold_reason": string | null,"slug": string,"status": Database["public"]['Enums']["restaurant_status"],"status_changed_at": string,"terms_accepted_at": string | null,"terms_accepted_by": string | null,"terms_version": string | null,"updated_at": string
+                    "changed_at": string,"changed_by": string | null,"old_slug": string,"restaurant_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"country_code"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"default_locale"?: string,"id"?: string,"invite_ttl_hours"?: number,"name": string,"onboarding_completed_at"?: string | null,"platform_hold"?: boolean,"platform_hold_reason"?: string | null,"slug": string,"status"?: Database["public"]['Enums']["restaurant_status"],"status_changed_at"?: string,"terms_accepted_at"?: string | null,"terms_accepted_by"?: string | null,"terms_version"?: string | null,"updated_at"?: string
+                    "changed_at"?: string,"changed_by"?: string | null,"old_slug": string,"restaurant_id": string
                   }
                   Update: {
-                    "archived_at"?: string | null,"country_code"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"default_locale"?: string,"id"?: string,"invite_ttl_hours"?: number,"name"?: string,"onboarding_completed_at"?: string | null,"platform_hold"?: boolean,"platform_hold_reason"?: string | null,"slug"?: string,"status"?: Database["public"]['Enums']["restaurant_status"],"status_changed_at"?: string,"terms_accepted_at"?: string | null,"terms_accepted_by"?: string | null,"terms_version"?: string | null,"updated_at"?: string
+                    "changed_at"?: string,"changed_by"?: string | null,"old_slug"?: string,"restaurant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "restaurant_slug_history_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"restaurants": {
+                  Row: {
+                    "archived_at": string | null,"contact_email": string | null,"contact_phone_e164": string | null,"country_code": string,"cover_path": string | null,"created_at": string,"created_by": string | null,"currency": string,"default_locale": string,"description": NonNullable<Json>,"id": string,"invite_ttl_hours": number,"logo_path": string | null,"name": string,"onboarding_completed_at": string | null,"platform_hold": boolean,"platform_hold_reason": string | null,"slug": string,"social_links": NonNullable<Json>,"staff_auto_lock_minutes": number,"status": Database["public"]['Enums']["restaurant_status"],"status_changed_at": string,"tagline": NonNullable<Json>,"terms_accepted_at": string | null,"terms_accepted_by": string | null,"terms_version": string | null,"timezone": string,"updated_at": string,"whatsapp_e164": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"contact_email"?: string | null,"contact_phone_e164"?: string | null,"country_code"?: string,"cover_path"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"default_locale"?: string,"description"?: NonNullable<Json>,"id"?: string,"invite_ttl_hours"?: number,"logo_path"?: string | null,"name": string,"onboarding_completed_at"?: string | null,"platform_hold"?: boolean,"platform_hold_reason"?: string | null,"slug": string,"social_links"?: NonNullable<Json>,"staff_auto_lock_minutes"?: number,"status"?: Database["public"]['Enums']["restaurant_status"],"status_changed_at"?: string,"tagline"?: NonNullable<Json>,"terms_accepted_at"?: string | null,"terms_accepted_by"?: string | null,"terms_version"?: string | null,"timezone"?: string,"updated_at"?: string,"whatsapp_e164"?: string | null
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"contact_email"?: string | null,"contact_phone_e164"?: string | null,"country_code"?: string,"cover_path"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"default_locale"?: string,"description"?: NonNullable<Json>,"id"?: string,"invite_ttl_hours"?: number,"logo_path"?: string | null,"name"?: string,"onboarding_completed_at"?: string | null,"platform_hold"?: boolean,"platform_hold_reason"?: string | null,"slug"?: string,"social_links"?: NonNullable<Json>,"staff_auto_lock_minutes"?: number,"status"?: Database["public"]['Enums']["restaurant_status"],"status_changed_at"?: string,"tagline"?: NonNullable<Json>,"terms_accepted_at"?: string | null,"terms_accepted_by"?: string | null,"terms_version"?: string | null,"timezone"?: string,"updated_at"?: string,"whatsapp_e164"?: string | null
                   }
                   Relationships: [
                     
@@ -553,6 +883,40 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"user_devices": {
+                  Row: {
+                    "first_seen_at": string,"id": string,"label": string | null,"last_seen_at": string,"revoked_at": string | null,"revoked_by": string | null,"token_hash": string,"trusted_at": string | null,"user_agent": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "first_seen_at"?: string,"id"?: string,"label"?: string | null,"last_seen_at"?: string,"revoked_at"?: string | null,"revoked_by"?: string | null,"token_hash": string,"trusted_at"?: string | null,"user_agent"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "first_seen_at"?: string,"id"?: string,"label"?: string | null,"last_seen_at"?: string,"revoked_at"?: string | null,"revoked_by"?: string | null,"token_hash"?: string,"trusted_at"?: string | null,"user_agent"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"website_settings": {
+                  Row: {
+                    "is_published": boolean,"menu_style": Database["public"]['Enums']["menu_display_style"],"online_payment_enabled": boolean,"ordering_enabled": boolean,"restaurant_id": string,"seo_description": NonNullable<Json>,"seo_title": NonNullable<Json>,"show_branches": boolean,"show_gallery": boolean,"show_hours": boolean,"show_whatsapp": boolean,"template_key": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "is_published"?: boolean,"menu_style"?: Database["public"]['Enums']["menu_display_style"],"online_payment_enabled"?: boolean,"ordering_enabled"?: boolean,"restaurant_id": string,"seo_description"?: NonNullable<Json>,"seo_title"?: NonNullable<Json>,"show_branches"?: boolean,"show_gallery"?: boolean,"show_hours"?: boolean,"show_whatsapp"?: boolean,"template_key"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "is_published"?: boolean,"menu_style"?: Database["public"]['Enums']["menu_display_style"],"online_payment_enabled"?: boolean,"ordering_enabled"?: boolean,"restaurant_id"?: string,"seo_description"?: NonNullable<Json>,"seo_title"?: NonNullable<Json>,"show_branches"?: boolean,"show_gallery"?: boolean,"show_hours"?: boolean,"show_whatsapp"?: boolean,"template_key"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "website_settings_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: true
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -562,23 +926,53 @@ isOneToOne: false
             "accept_staff_invitation":
 { Args: { "p_token": string }; Returns: string
                            },
+"add_custom_domain":
+{ Args: { "p_hostname": string,"p_restaurant_id": string }; Returns: string
+                           },
+"ai_credit_balance":
+{ Args: { "p_restaurant_id": string }; Returns: number
+                           },
+"apply_menu_import":
+{ Args: { "p_job_id": string,"p_payload": Json }; Returns: number
+                           },
 "assign_staff_role":
 { Args: { "p_branch_ids"?: (string)[],"p_branch_scope": Database["public"]['Enums']["branch_scope"],"p_membership_id": string,"p_role_id": string }; Returns: undefined
+                           },
+"branch_open_status":
+{ Args: { "p_restaurant_id": string }; Returns: Json
+                           },
+"buy_ai_credits":
+{ Args: { "p_packs": number,"p_restaurant_id": string }; Returns: string
                            },
 "buy_extra_branches":
 { Args: { "p_count": number,"p_restaurant_id": string }; Returns: string
                            },
+"cancel_ai_job":
+{ Args: { "p_job_id": string }; Returns: undefined
+                           },
 "cancel_staff_invitation":
 { Args: { "p_membership_id": string }; Returns: undefined
                            },
+"change_restaurant_slug":
+{ Args: { "p_new_slug": string,"p_restaurant_id": string }; Returns: undefined
+                           },
+"change_staff_phone":
+{ Args: { "p_membership_id": string,"p_new_phone": string,"p_reason": string }; Returns: undefined
+                           },
 "choose_plan":
 { Args: { "p_extra_branches"?: number,"p_plan_key": string,"p_restaurant_id": string }; Returns: string
+                           },
+"complete_menu_import":
+{ Args: { "p_job_id": string,"p_result": Json }; Returns: string
                            },
 "complete_onboarding":
 { Args: { "p_restaurant_id": string }; Returns: undefined
                            },
 "complete_staff_verification":
 { Args: { "p_membership_id": string,"p_pin": string }; Returns: boolean
+                           },
+"complete_translation":
+{ Args: { "p_job_id": string,"p_translated": Json }; Returns: string
                            },
 "create_custom_role":
 { Args: { "p_description"?: string,"p_key": string,"p_name": string,"p_permission_keys": (string)[],"p_restaurant_id": string }; Returns: string
@@ -588,6 +982,9 @@ isOneToOne: false
                            },
 "dev_list_outbox":
 { Args: { "p_limit"?: number }; Returns: Json[]
+                           },
+"fail_ai_job":
+{ Args: { "p_error": string,"p_job_id": string }; Returns: undefined
                            },
 "get_invitation_preview":
 { Args: { "p_token": string }; Returns: Json
@@ -604,6 +1001,15 @@ isOneToOne: false
 "invite_staff":
 { Args: { "p_full_name": string,"p_intended_branch_id"?: string,"p_phone_e164": string,"p_restaurant_id": string }; Returns: string
                            },
+"list_parked_sessions":
+{ Args: { "p_device_token": string }; Returns: Json
+                           },
+"logout_all_devices":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"mark_translation_reviewed":
+{ Args: { "p_entity": string,"p_id": string,"p_locale": string }; Returns: undefined
+                           },
 "my_permissions":
 { Args: { "p_restaurant_id": string }; Returns: (string)[]
                            },
@@ -613,8 +1019,17 @@ isOneToOne: false
 "open_invitation":
 { Args: { "p_token": string }; Returns: string
                            },
+"park_device_session":
+{ Args: { "p_ciphertext": string,"p_device_token": string,"p_user_id": string }; Returns: undefined
+                           },
+"pin_unlock":
+{ Args: { "p_device_token": string,"p_pin": string,"p_user_id": string }; Returns: Json
+                           },
 "platform_add_staff":
 { Args: { "p_email": string,"p_role": Database["public"]['Enums']["platform_role"] }; Returns: string
+                           },
+"platform_adjust_ai_credits":
+{ Args: { "p_delta": number,"p_reason": string,"p_restaurant_id": string }; Returns: undefined
                            },
 "platform_get_restaurant_overview":
 { Args: { "p_reason": string,"p_restaurant_id": string }; Returns: Json
@@ -646,6 +1061,9 @@ isOneToOne: false
 "platform_set_hold":
 { Args: { "p_hold": boolean,"p_reason": string,"p_restaurant_id": string }; Returns: undefined
                            },
+"platform_set_language":
+{ Args: { "p_code": string,"p_enabled": boolean }; Returns: undefined
+                           },
 "platform_set_price":
 { Args: { "p_amount_minor": number,"p_item_type": Database["public"]['Enums']["price_item"],"p_plan_key": string }; Returns: string
                            },
@@ -661,10 +1079,31 @@ isOneToOne: false
 "platform_void_invoice":
 { Args: { "p_invoice_id": string,"p_reason": string }; Returns: undefined
                            },
+"record_auth_event":
+{ Args: { "p_action": string }; Returns: undefined
+                           },
+"register_trusted_device":
+{ Args: { "p_device_token": string,"p_label"?: string,"p_user_agent"?: string }; Returns: string
+                           },
+"remove_custom_domain":
+{ Args: { "p_domain_id": string }; Returns: string
+                           },
 "resend_staff_invitation":
 { Args: { "p_membership_id": string }; Returns: undefined
                            },
+"reset_staff_pin":
+{ Args: { "p_membership_id": string,"p_reason": string }; Returns: undefined
+                           },
+"resolve_host":
+{ Args: { "p_hostname": string }; Returns: Json
+                           },
+"resolve_restaurant_slug":
+{ Args: { "p_slug": string }; Returns: Json
+                           },
 "restaurant_billing_overview":
+{ Args: { "p_restaurant_id": string }; Returns: Json
+                           },
+"restaurant_dashboard":
 { Args: { "p_restaurant_id": string }; Returns: Json
                            },
 "restaurant_entitlements":
@@ -673,12 +1112,45 @@ isOneToOne: false
 "restaurant_setup_status":
 { Args: { "p_restaurant_id": string }; Returns: Json
                            },
+"revoke_device":
+{ Args: { "p_device_id": string }; Returns: undefined
+                           },
+"set_branch_hours":
+{ Args: { "p_branch_id": string,"p_hours": Json }; Returns: undefined
+                           },
+"set_domain_status":
+{ Args: { "p_domain_id": string,"p_error"?: string,"p_status": Database["public"]['Enums']["domain_status"],"p_verification"?: Json }; Returns: undefined
+                           },
+"set_my_pin":
+{ Args: { "p_pin": string }; Returns: undefined
+                           },
+"set_primary_domain":
+{ Args: { "p_domain_id": string }; Returns: undefined
+                           },
+"set_restaurant_languages":
+{ Args: { "p_locales": (string)[],"p_restaurant_id": string }; Returns: undefined
+                           },
+"set_security_settings":
+{ Args: { "p_auto_lock_minutes": number,"p_restaurant_id": string }; Returns: undefined
+                           },
+"set_staff_status":
+{ Args: { "p_membership_id": string,"p_reason": string,"p_status": Database["public"]['Enums']["membership_status"] }; Returns: undefined
+                           },
+"start_menu_import":
+{ Args: { "p_restaurant_id": string,"p_source_path": string }; Returns: string
+                           },
+"start_translation":
+{ Args: { "p_restaurant_id": string,"p_scope": Json,"p_target_locale": string }; Returns: Json
+                           },
+"unlock_ai_job":
+{ Args: { "p_job_id": string }; Returns: undefined
+                           },
 "upgrade_plan":
 { Args: { "p_plan_key": string,"p_restaurant_id": string }; Returns: string
                            }
           }
           Enums: {
-            "branch_scope": "all"|"selected","feature_kind": "flag"|"limit","invitation_status": "pending"|"opened"|"consumed"|"expired"|"cancelled"|"replaced","invoice_kind": "new_period"|"upgrade"|"extra_branches","invoice_status": "open"|"paid"|"void","membership_status": "invitation_sent"|"verification_pending"|"new_staff"|"active"|"expired"|"cancelled"|"locked"|"disabled"|"removed","payment_method": "bank_transfer"|"cash"|"card_offline"|"processor","period_kind": "trial"|"paid","permission_effect": "grant"|"deny","platform_role": "super_admin"|"admin"|"support"|"finance"|"content"|"discovery","price_item": "plan"|"extra_branch","restaurant_status": "trial"|"active"|"past_due"|"grace"|"suspended"|"retention"|"expiring"|"deleted","trial_source": "automatic"|"platform_exception"
+            "ai_credit_reason": "free_grant"|"purchase"|"import"|"translation"|"refund"|"adjustment","ai_job_kind": "menu_import"|"translation","ai_job_status": "processing"|"needs_credits"|"needs_review"|"completed"|"failed"|"cancelled","allergen": "gluten"|"crustaceans"|"eggs"|"fish"|"peanuts"|"soybeans"|"milk"|"tree_nuts"|"celery"|"mustard"|"sesame"|"sulphites"|"lupin"|"molluscs","branch_scope": "all"|"selected","branch_status_override": "auto"|"open"|"closed","dietary_tag": "vegetarian"|"vegan"|"halal"|"gluten_free"|"dairy_free"|"nut_free"|"healthy"|"new"|"popular"|"chef_special","domain_status": "not_connected"|"dns_required"|"verifying"|"connected"|"ssl_pending"|"active"|"error"|"disconnected","feature_kind": "flag"|"limit","invitation_status": "pending"|"opened"|"consumed"|"expired"|"cancelled"|"replaced","invoice_kind": "new_period"|"upgrade"|"extra_branches"|"ai_credits","invoice_status": "open"|"paid"|"void","media_kind": "image"|"video","membership_status": "invitation_sent"|"verification_pending"|"new_staff"|"active"|"expired"|"cancelled"|"locked"|"disabled"|"removed","menu_display_style": "list"|"grid"|"compact","payment_method": "bank_transfer"|"cash"|"card_offline"|"processor","period_kind": "trial"|"paid","permission_effect": "grant"|"deny","platform_role": "super_admin"|"admin"|"support"|"finance"|"content"|"discovery","price_item": "plan"|"extra_branch"|"ai_credits_pack","restaurant_status": "trial"|"active"|"past_due"|"grace"|"suspended"|"retention"|"expiring"|"deleted","trial_source": "automatic"|"platform_exception"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -798,7 +1270,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "branch_scope": ["all", "selected"],"feature_kind": ["flag", "limit"],"invitation_status": ["pending", "opened", "consumed", "expired", "cancelled", "replaced"],"invoice_kind": ["new_period", "upgrade", "extra_branches"],"invoice_status": ["open", "paid", "void"],"membership_status": ["invitation_sent", "verification_pending", "new_staff", "active", "expired", "cancelled", "locked", "disabled", "removed"],"payment_method": ["bank_transfer", "cash", "card_offline", "processor"],"period_kind": ["trial", "paid"],"permission_effect": ["grant", "deny"],"platform_role": ["super_admin", "admin", "support", "finance", "content", "discovery"],"price_item": ["plan", "extra_branch"],"restaurant_status": ["trial", "active", "past_due", "grace", "suspended", "retention", "expiring", "deleted"],"trial_source": ["automatic", "platform_exception"]
+            "ai_credit_reason": ["free_grant", "purchase", "import", "translation", "refund", "adjustment"],"ai_job_kind": ["menu_import", "translation"],"ai_job_status": ["processing", "needs_credits", "needs_review", "completed", "failed", "cancelled"],"allergen": ["gluten", "crustaceans", "eggs", "fish", "peanuts", "soybeans", "milk", "tree_nuts", "celery", "mustard", "sesame", "sulphites", "lupin", "molluscs"],"branch_scope": ["all", "selected"],"branch_status_override": ["auto", "open", "closed"],"dietary_tag": ["vegetarian", "vegan", "halal", "gluten_free", "dairy_free", "nut_free", "healthy", "new", "popular", "chef_special"],"domain_status": ["not_connected", "dns_required", "verifying", "connected", "ssl_pending", "active", "error", "disconnected"],"feature_kind": ["flag", "limit"],"invitation_status": ["pending", "opened", "consumed", "expired", "cancelled", "replaced"],"invoice_kind": ["new_period", "upgrade", "extra_branches", "ai_credits"],"invoice_status": ["open", "paid", "void"],"media_kind": ["image", "video"],"membership_status": ["invitation_sent", "verification_pending", "new_staff", "active", "expired", "cancelled", "locked", "disabled", "removed"],"menu_display_style": ["list", "grid", "compact"],"payment_method": ["bank_transfer", "cash", "card_offline", "processor"],"period_kind": ["trial", "paid"],"permission_effect": ["grant", "deny"],"platform_role": ["super_admin", "admin", "support", "finance", "content", "discovery"],"price_item": ["plan", "extra_branch", "ai_credits_pack"],"restaurant_status": ["trial", "active", "past_due", "grace", "suspended", "retention", "expiring", "deleted"],"trial_source": ["automatic", "platform_exception"]
           }
         }
 } as const

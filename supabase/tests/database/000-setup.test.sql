@@ -13,11 +13,16 @@ create function tests.id(p_name text) returns uuid
 language sql immutable as $$ select md5('gomenu-test:' || p_name)::uuid $$;
 
 -- Act as a signed-in user for the rest of the transaction.
-create function tests.authenticate_as(p_name text, p_aal text default 'aal1') returns void
+-- p_otp_age: seconds since an OTP login (NULL = the session did not come from an OTP).
+create function tests.authenticate_as(p_name text, p_aal text default 'aal1', p_otp_age integer default null) returns void
 language plpgsql as $$
 begin
   perform set_config('request.jwt.claims',
-    json_build_object('sub', tests.id(p_name), 'role', 'authenticated', 'aal', p_aal)::text, true);
+    json_build_object('sub', tests.id(p_name), 'role', 'authenticated', 'aal', p_aal,
+                      'session_id', tests.id('session:' || p_name),
+                      'amr', case when p_otp_age is null then '[]'::json
+                                  else json_build_array(json_build_object('method', 'otp',
+                                         'timestamp', extract(epoch from now())::bigint - p_otp_age)) end)::text, true);
   perform set_config('role', 'authenticated', true);
 end $$;
 
@@ -121,6 +126,28 @@ begin
   return v_id;
 end $$;
 
+create function tests.menu_fixture(p_restaurant text, p_branch text) returns void
+language plpgsql as $$
+declare r uuid := tests.id(p_restaurant);
+begin
+  insert into public.menu_categories (id, restaurant_id, name) values (tests.id(p_restaurant || ':cat'), r, '{"en": "Mains"}');
+  insert into public.menu_items (id, restaurant_id, category_id, name, price_minor)
+  values (tests.id(p_restaurant || ':item'), r, tests.id(p_restaurant || ':cat'), '{"en": "Shuwa"}', 4500);
+  insert into public.menu_item_variants (restaurant_id, item_id, name, price_minor)
+  values (r, tests.id(p_restaurant || ':item'), '{"en": "Large"}', 6000);
+  insert into public.menu_option_groups (id, restaurant_id, item_id, name, max_select)
+  values (tests.id(p_restaurant || ':group'), r, tests.id(p_restaurant || ':item'), '{"en": "Extras"}', 3);
+  insert into public.menu_options (restaurant_id, group_id, name, price_delta_minor)
+  values (r, tests.id(p_restaurant || ':group'), '{"en": "Rice"}', 500);
+  insert into public.branch_menu_overrides (restaurant_id, branch_id, item_id, is_available)
+  values (r, tests.id(p_branch), tests.id(p_restaurant || ':item'), false);
+  insert into public.menu_item_media (restaurant_id, item_id, kind, storage_path, is_cover)
+  values (r, tests.id(p_restaurant || ':item'), 'image', r || '/menu/shuwa.webp', true);
+  insert into public.gallery_media (restaurant_id, kind, storage_path) values (r, 'image', r || '/gallery/room.webp');
+  insert into public.branch_hours (restaurant_id, branch_id, day_of_week, opens_at, closes_at)
+  values (r, tests.id(p_branch), 0, '09:00', '23:00');
+end $$;
+
 -- Two complete tenants, every persona, and at least one row in every public table.
 create function tests.build_fixtures() returns void
 language plpgsql as $$
@@ -204,6 +231,17 @@ begin
   values (tests.id('invoice_b'), tests.id('restaurant_b'), 12000, 'USD', 'bank_transfer', 'FIXTURE-B-1', now() - interval '30 days');
   insert into public.restaurant_entitlement_overrides (restaurant_id, feature_key, enabled, reason)
   values (tests.id('restaurant_b'), 'promotions', true, 'fixture: sales promise');
+
+  -- Phase 3: menu, media, hours, AI, website and devices in both tenants
+  perform tests.menu_fixture('restaurant_a', 'a1');
+  perform tests.menu_fixture('restaurant_b', 'b1');
+  insert into public.restaurant_domains (restaurant_id, hostname, kind, status)
+  values (tests.id('restaurant_b'), 'bravo-restaurant.test', 'root', 'active');
+  insert into public.restaurant_slug_history (old_slug, restaurant_id) values ('restaurant-b-old', tests.id('restaurant_b'));
+  insert into public.ai_jobs (restaurant_id, kind, status, item_count)
+  values (tests.id('restaurant_b'), 'menu_import', 'needs_review', 0);
+  insert into public.user_devices (user_id, token_hash, trusted_at)
+  values (tests.id('owner_b'), private.hash_token('device-token-owner-b-0123456789abcdef0123'), now());
 
   -- storage objects in both tenants and both buckets
   insert into storage.objects (bucket_id, name) values
