@@ -73,6 +73,7 @@ select is(
     'accept_staff_invitation:authenticated',
     'add_custom_domain:authenticated',
     'ai_credit_balance:authenticated',
+    'ai_credit_pack_info:authenticated',
     'apply_menu_import:authenticated',
     'assign_staff_role:authenticated',
     'branch_open_status:authenticated',

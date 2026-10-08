@@ -11,6 +11,7 @@ const NAV = [
   { href: "/platform/restaurants", label: "Restaurants", roles: ["super_admin", "admin", "finance", "support"] },
   { href: "/platform/invoices", label: "Invoices", roles: ["super_admin", "admin", "finance"] },
   { href: "/platform/plans", label: "Plans & prices", roles: ["super_admin", "admin"] },
+  { href: "/platform/languages", label: "Languages", roles: ["super_admin", "admin", "content"] },
   { href: "/platform/settings", label: "Settings", roles: ["super_admin"] },
   { href: "/platform/staff", label: "Staff", roles: ["super_admin"] },
   { href: "/platform/audit", label: "Audit log", roles: ["super_admin"] },

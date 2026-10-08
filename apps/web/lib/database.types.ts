@@ -932,6 +932,9 @@ isOneToOne: true
 "ai_credit_balance":
 { Args: { "p_restaurant_id": string }; Returns: number
                            },
+"ai_credit_pack_info":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "apply_menu_import":
 { Args: { "p_job_id": string,"p_payload": Json }; Returns: number
                            },

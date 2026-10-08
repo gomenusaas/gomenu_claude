@@ -3,19 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { dbError, type FormState } from "@/components/form-state";
 import { getDictionary } from "@/lib/i18n";
+import { i18nFromForm as i18n } from "@/lib/i18n/text";
 import { toE164 } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
-
-/** Collect per-language fields named `${prefix}:${locale}` into {"en": "...", "ar": "..."}. */
-function i18n(fd: FormData, prefix: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of fd.entries()) {
-    if (key.startsWith(`${prefix}:`) && String(value).trim()) out[key.slice(prefix.length + 1)] = String(value).trim();
-  }
-  return out;
-}
 
 export async function saveProfile(_: FormState, fd: FormData): Promise<FormState> {
   const { t } = await getDictionary();

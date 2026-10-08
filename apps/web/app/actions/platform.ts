@@ -100,3 +100,14 @@ export async function setStaffActive(_: FormState, fd: FormData) {
   return call("platform_set_staff_active", { p_user_id: s(fd, "user_id"), p_active: s(fd, "active") === "true" },
     "/platform/staff", "Updated.");
 }
+
+export async function setLanguage(_: FormState, fd: FormData) {
+  return call("platform_set_language", { p_code: s(fd, "code"), p_enabled: s(fd, "enabled") === "true" },
+    "/platform/languages", "Updated.");
+}
+
+export async function adjustAiCredits(_: FormState, fd: FormData) {
+  return call("platform_adjust_ai_credits", {
+    p_restaurant_id: s(fd, "restaurant_id"), p_delta: Number(s(fd, "delta")), p_reason: s(fd, "reason"),
+  }, "/platform/restaurants", "Credits adjusted.");
+}

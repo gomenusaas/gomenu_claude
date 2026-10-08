@@ -14,10 +14,13 @@ import type { FormState } from "./form-state";
 export function ActionForm({
   action,
   className,
+  quiet,
   children,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   className?: string;
+  /** Don't show success messages (small inline buttons whose effect is visible anyway). */
+  quiet?: boolean;
   children: React.ReactNode;
 }) {
   const [state, formAction] = useActionState(action, undefined);
@@ -46,7 +49,7 @@ export function ActionForm({
           )}
         </Alert>
       ) : null}
-      {state?.ok && state.ok !== "ok" ? <Alert tone="success">{state.ok}</Alert> : null}
+      {state?.ok && state.ok !== "ok" && !quiet ? <Alert tone="success">{state.ok}</Alert> : null}
       {children}
     </form>
   );

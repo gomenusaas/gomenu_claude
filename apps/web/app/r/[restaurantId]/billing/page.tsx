@@ -1,5 +1,6 @@
 import { Alert, Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input } from "@gomenu/ui";
 import { notFound } from "next/navigation";
+import { buyCredits } from "@/app/actions/ai";
 import { buyExtraBranches, choosePlan, upgradePlan } from "@/app/actions/billing";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
@@ -36,8 +37,13 @@ export default async function BillingPage({ params }: { params: Promise<{ restau
   if (!ctx.active_memberships?.some((m) => m.restaurant_id === restaurantId)) notFound();
   const { locale, t } = await getDictionary();
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("restaurant_billing_overview", { p_restaurant_id: restaurantId });
+  const [{ data, error }, { data: pack }, { data: credits }] = await Promise.all([
+    supabase.rpc("restaurant_billing_overview", { p_restaurant_id: restaurantId }),
+    supabase.rpc("ai_credit_pack_info"),
+    supabase.rpc("ai_credit_balance", { p_restaurant_id: restaurantId }),
+  ]);
   if (error) notFound(); // billing.manage only (owners)
+  const packInfo = pack as { size: number; amount_minor: number | null; currency: string } | null;
   const o = data as unknown as Overview;
   const b = t.billing;
   const money = (minor: number, currency = o.pricing.currency) => formatMoney(minor, currency, locale);
@@ -147,6 +153,24 @@ export default async function BillingPage({ params }: { params: Promise<{ restau
         </div>
       ) : null}
 
+      {packInfo?.amount_minor ? (
+        <Card id="ai-credits" data-testid="ai-credits-card">
+          <CardHeader>
+            <CardTitle as="h2" className="text-base">{t.ai.buyCredits}</CardTitle>
+            <CardDescription>
+              {fmt(t.ai.credits, { n: credits ?? 0 })} · {fmt(t.ai.buyCreditsBody, { size: packInfo.size, price: money(packInfo.amount_minor, packInfo.currency) })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ActionForm action={buyCredits} className="flex flex-wrap items-end gap-2">
+              <input type="hidden" name="restaurant_id" value={restaurantId} />
+              <Field id="packs" label={t.ai.packs}><Input name="packs" type="number" min={1} max={50} defaultValue={1} className="w-24" /></Field>
+              <SubmitButton>{b.createInvoice}</SubmitButton>
+            </ActionForm>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader><CardTitle as="h2" className="text-base">{b.history}</CardTitle></CardHeader>
         <CardContent>
@@ -155,6 +179,7 @@ export default async function BillingPage({ params }: { params: Promise<{ restau
             {o.invoices.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2" data-testid="invoice-row">
                 <span className="font-medium" dir="ltr">{i.number}</span>
+                {i.kind === "ai_credits" ? <span className="text-muted-foreground">{t.ai.creditsInvoice}</span> : null}
                 <span className="text-muted-foreground">{formatDate(i.issued_at, locale)}</span>
                 <span>{money(i.total_minor, i.currency)}</span>
                 <Badge tone={i.status === "paid" ? "success" : i.status === "open" ? "warning" : "neutral"}>{b.invoiceStatus[i.status]}</Badge>

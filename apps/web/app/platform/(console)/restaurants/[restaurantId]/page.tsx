@@ -1,5 +1,5 @@
 import { Badge, Card, CardContent, CardHeader, CardTitle, Field, Input } from "@gomenu/ui";
-import { grantTrial, setHold, setOverride } from "@/app/actions/platform";
+import { adjustAiCredits, grantTrial, setHold, setOverride } from "@/app/actions/platform";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -67,6 +67,14 @@ export default async function PlatformRestaurant({ params }: { params: Promise<{
             <input type="hidden" name="hold" value={String(!r.platform_hold)} />
             <Field id="hold_reason" label="Reason"><Input name="reason" required /></Field>
             <SubmitButton variant={r.platform_hold ? "primary" : "destructive"}>{r.platform_hold ? "Release" : "Suspend"}</SubmitButton>
+          </ActionForm>
+        </CardContent></Card>
+        <Card><CardHeader><CardTitle as="h2" className="text-base">AI credits</CardTitle></CardHeader><CardContent>
+          <ActionForm action={adjustAiCredits}>
+            <input type="hidden" name="restaurant_id" value={r.id} />
+            <Field id="delta" label="Add (or remove, with a minus sign)"><Input name="delta" type="number" required /></Field>
+            <Field id="credits_reason" label="Reason"><Input name="reason" required /></Field>
+            <SubmitButton>Adjust credits</SubmitButton>
           </ActionForm>
         </CardContent></Card>
         <Card><CardHeader><CardTitle as="h2" className="text-base">Entitlement override</CardTitle></CardHeader><CardContent>

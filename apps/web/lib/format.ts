@@ -51,3 +51,20 @@ export function isoToZonedLocal(iso: string, timeZone: string): string {
   const d = new Date(iso);
   return new Date(d.getTime() + tzOffsetMs(d, timeZone)).toISOString().slice(0, 16);
 }
+
+export function currencyExponent(currency: string): number {
+  return EXPONENT[currency] ?? 2;
+}
+
+/** "1.5" → 1500 for OMR. Returns null for anything that is not a non-negative number. */
+export function toMinor(input: string, currency: string): number | null {
+  const value = Number(input.trim().replace(",", "."));
+  if (!input.trim() || !Number.isFinite(value) || value < 0) return null;
+  return Math.round(value * 10 ** currencyExponent(currency));
+}
+
+/** 1500 → "1.500" for OMR, for a form's defaultValue. */
+export function minorToInput(minor: number, currency: string): string {
+  const exp = currencyExponent(currency);
+  return (minor / 10 ** exp).toFixed(exp);
+}

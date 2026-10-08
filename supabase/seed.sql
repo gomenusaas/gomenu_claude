@@ -117,4 +117,35 @@ begin
             jsonb_build_object('sub', r.id::text, 'email', r.email, 'email_verified', true), now(), now(), now());
     insert into public.platform_staff (user_id, role) values (r.id, r.role::public.platform_role);
   end loop;
+
+  -- Phase 3 demo content for Muscat Grill: Arabic on, opening hours, a small bilingual menu.
+  insert into public.restaurant_languages (restaurant_id, locale, sort) values (v_r1, 'ar', 10) on conflict do nothing;
+  insert into public.branch_hours (restaurant_id, branch_id, day_of_week, opens_at, closes_at)
+  select v_r1, b, d, '11:00', '01:00' from unnest(array[v_qurum, v_mouj]) b, generate_series(0, 6) d;
+  insert into public.menu_categories (id, restaurant_id, name, sort) values
+    ('d4000000-0000-4000-8000-000000000001', v_r1, '{"en": "Starters", "ar": "المقبلات"}', 10),
+    ('d4000000-0000-4000-8000-000000000002', v_r1, '{"en": "Grills", "ar": "المشاوي"}', 20),
+    ('d4000000-0000-4000-8000-000000000003', v_r1, '{"en": "Drinks", "ar": "المشروبات"}', 30);
+  insert into public.menu_items (id, restaurant_id, category_id, name, description, price_minor, sort, allergens, dietary_tags, spice_level) values
+    ('d5000000-0000-4000-8000-000000000001', v_r1, 'd4000000-0000-4000-8000-000000000001',
+     '{"en": "Hummus", "ar": "حمص"}', '{"en": "Chickpeas, tahini, olive oil", "ar": "حمص، طحينة، زيت زيتون"}', 1500, 10,
+     '{sesame}', '{vegetarian,vegan}', 0),
+    ('d5000000-0000-4000-8000-000000000002', v_r1, 'd4000000-0000-4000-8000-000000000001',
+     '{"en": "Lentil soup", "ar": "شوربة عدس"}', '{}', 1200, 20, '{}', '{vegetarian}', 0),
+    ('d5000000-0000-4000-8000-000000000003', v_r1, 'd4000000-0000-4000-8000-000000000002',
+     '{"en": "Mixed grill", "ar": "مشاوي مشكلة"}', '{"en": "Lamb kebab, shish tawook, kofta", "ar": "كباب لحم، شيش طاووق، كفتة"}', 5900, 10,
+     '{}', '{halal,popular}', 1),
+    ('d5000000-0000-4000-8000-000000000004', v_r1, 'd4000000-0000-4000-8000-000000000002',
+     '{"en": "Chicken shawarma plate", "ar": "صحن شاورما دجاج"}', '{}', 3500, 20, '{gluten}', '{halal}', 1),
+    ('d5000000-0000-4000-8000-000000000005', v_r1, 'd4000000-0000-4000-8000-000000000003',
+     '{"en": "Fresh lemon mint", "ar": "ليمون بالنعناع"}', '{}', 1000, 10, '{}', '{vegan}', 0);
+  insert into public.menu_item_variants (restaurant_id, item_id, name, price_minor, sort, is_default) values
+    (v_r1, 'd5000000-0000-4000-8000-000000000005', '{"en": "Regular", "ar": "عادي"}', 1000, 10, true),
+    (v_r1, 'd5000000-0000-4000-8000-000000000005', '{"en": "Large", "ar": "كبير"}', 1400, 20, false);
+  insert into public.menu_option_groups (id, restaurant_id, item_id, name, min_select, max_select, sort) values
+    ('d6000000-0000-4000-8000-000000000001', v_r1, 'd5000000-0000-4000-8000-000000000003',
+     '{"en": "Extras", "ar": "إضافات"}', 0, 3, 10);
+  insert into public.menu_options (restaurant_id, group_id, name, price_delta_minor, sort) values
+    (v_r1, 'd6000000-0000-4000-8000-000000000001', '{"en": "Garlic sauce", "ar": "ثومية"}', 200, 10),
+    (v_r1, 'd6000000-0000-4000-8000-000000000001', '{"en": "Extra bread", "ar": "خبز إضافي"}', 300, 20);
 end $$;
