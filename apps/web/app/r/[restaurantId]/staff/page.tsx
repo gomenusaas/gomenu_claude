@@ -1,5 +1,5 @@
 import { Alert, Badge, Button, Card, CardContent, CardHeader, CardTitle, Field, Input, Label } from "@gomenu/ui";
-import { assignRole, cancelInvitation, inviteStaff, resendInvitation } from "@/app/actions/staff";
+import { assignRole, cancelInvitation, changeStaffPhone, inviteStaff, resendInvitation, resetStaffPin, setStaffStatus } from "@/app/actions/staff";
 import { ActionForm } from "@/components/action-form";
 import { SubmitButton } from "@/components/submit-button";
 import { notFound } from "next/navigation";
@@ -50,6 +50,39 @@ export default async function StaffPage({ params }: { params: Promise<{ restaura
   const profileOf = (id: string | null) => profiles?.find((p) => p.id === id);
   const assignableRoles = (roles ?? []).filter((r) => !r.is_new_staff && (!r.is_owner || can("ownership.transfer")));
 
+  function AssignForm({ membershipId, title, submit }: { membershipId: string; title: string; submit: string }) {
+    return (
+      <ActionForm action={assignRole} className="rounded-md bg-muted/50 p-3">
+        <input type="hidden" name="membership_id" value={membershipId} />
+        <input type="hidden" name="restaurant_id" value={restaurantId} />
+        <div className="text-sm font-medium">{title}</div>
+        <div className="grid gap-2">
+          <Label htmlFor={`role-${membershipId}`}>{t.staff.role}</Label>
+          <select id={`role-${membershipId}`} name="role_id" className="h-11 rounded-md border border-input bg-background px-3" required>
+            {assignableRoles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        </div>
+        <fieldset className="grid gap-2">
+          <legend className="text-sm font-medium">{t.staff.scope}</legend>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" name="branch_scope" value="selected" defaultChecked /> {t.staff.scopeSelected}
+          </label>
+          <div className="grid gap-1 ps-6">
+            {(branches ?? []).map((b) => (
+              <label key={b.id} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="branch_ids" value={b.id} /> {b.name}
+              </label>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="radio" name="branch_scope" value="all" /> {t.staff.scopeAll}
+          </label>
+        </fieldset>
+        <SubmitButton size="sm">{submit}</SubmitButton>
+      </ActionForm>
+    );
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <section className="grid gap-4">
@@ -91,34 +124,50 @@ export default async function StaffPage({ params }: { params: Promise<{ restaura
                   ) : null}
 
                   {can("roles.assign") && status === "new_staff" ? (
-                    <ActionForm action={assignRole} className="rounded-md bg-muted/50 p-3">
-                      <input type="hidden" name="membership_id" value={m.id} />
-                      <input type="hidden" name="restaurant_id" value={restaurantId} />
-                      <div className="text-sm font-medium">{t.staff.assignTitle}</div>
-                      <div className="grid gap-2">
-                        <Label htmlFor={`role-${m.id}`}>{t.staff.role}</Label>
-                        <select id={`role-${m.id}`} name="role_id" className="h-11 rounded-md border border-input bg-background px-3" required>
-                          {assignableRoles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                        </select>
+                    <AssignForm membershipId={m.id} title={t.staff.assignTitle} submit={t.staff.activate} />
+                  ) : null}
+
+                  {can("staff.manage") && m.user_id && m.user_id !== ctx.user_id && ["active", "disabled", "locked"].includes(status) ? (
+                    <details className="rounded-md bg-muted/40 p-3" data-testid="manage-staff">
+                      <summary className="cursor-pointer text-sm font-medium">{t.staff.manage}</summary>
+                      <div className="mt-3 grid gap-4">
+                        {can("roles.assign") && status === "active" ? (
+                          <AssignForm membershipId={m.id} title={t.staff.changeRole} submit={t.common.save} />
+                        ) : null}
+                        <ActionForm action={setStaffStatus}>
+                          <input type="hidden" name="membership_id" value={m.id} />
+                          <input type="hidden" name="restaurant_id" value={restaurantId} />
+                          <div className="text-sm font-medium">{t.staff.statusTitle}</div>
+                          <Field id={`reason-${m.id}`} label={t.staff.reason}><Input name="reason" required /></Field>
+                          <div className="flex flex-wrap gap-2">
+                            {status === "active" ? (
+                              <>
+                                <SubmitButton size="sm" variant="outline" name="status" value="disabled">{t.staff.disable}</SubmitButton>
+                                <SubmitButton size="sm" variant="outline" name="status" value="locked">{t.staff.lockStaff}</SubmitButton>
+                              </>
+                            ) : (
+                              <SubmitButton size="sm" variant="outline" name="status" value="active">{t.staff.enable}</SubmitButton>
+                            )}
+                            <SubmitButton size="sm" variant="destructive" name="status" value="removed">{t.staff.removeStaff}</SubmitButton>
+                          </div>
+                        </ActionForm>
+                        <ActionForm action={changeStaffPhone}>
+                          <input type="hidden" name="membership_id" value={m.id} />
+                          <input type="hidden" name="restaurant_id" value={restaurantId} />
+                          <div className="text-sm font-medium">{t.staff.changePhone}</div>
+                          <Field id={`phone-${m.id}`} label={t.staff.newPhone}><Input name="phone" type="tel" dir="ltr" required /></Field>
+                          <Field id={`phone-reason-${m.id}`} label={t.staff.reason}><Input name="reason" required /></Field>
+                          <SubmitButton size="sm" variant="outline">{t.staff.changePhone}</SubmitButton>
+                        </ActionForm>
+                        <ActionForm action={resetStaffPin}>
+                          <input type="hidden" name="membership_id" value={m.id} />
+                          <div className="text-sm font-medium">{t.staff.resetPin}</div>
+                          <p className="text-sm text-muted-foreground">{t.staff.resetPinBody}</p>
+                          <Field id={`pin-reason-${m.id}`} label={t.staff.reason}><Input name="reason" required /></Field>
+                          <SubmitButton size="sm" variant="outline">{t.staff.resetPin}</SubmitButton>
+                        </ActionForm>
                       </div>
-                      <fieldset className="grid gap-2">
-                        <legend className="text-sm font-medium">{t.staff.scope}</legend>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input type="radio" name="branch_scope" value="selected" defaultChecked /> {t.staff.scopeSelected}
-                        </label>
-                        <div className="grid gap-1 ps-6">
-                          {(branches ?? []).map((b) => (
-                            <label key={b.id} className="flex items-center gap-2 text-sm">
-                              <input type="checkbox" name="branch_ids" value={b.id} /> {b.name}
-                            </label>
-                          ))}
-                        </div>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input type="radio" name="branch_scope" value="all" /> {t.staff.scopeAll}
-                        </label>
-                      </fieldset>
-                      <SubmitButton size="sm">{t.staff.activate}</SubmitButton>
-                    </ActionForm>
+                    </details>
                   ) : null}
                 </div>
               );

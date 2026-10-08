@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import type { FormState } from "@/components/form-state";
 import { getDictionary } from "@/lib/i18n";
+import { afterOtpLogin } from "@/lib/auth/device";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,7 @@ export async function verifyInvitationOtp(token: string, _: FormState, formData:
   const { error } = await supabase.auth.verifyOtp({ phone, token: code, type: "sms" });
   if (error) return { error: error.status === 429 ? t.login.tooMany : t.verify.invalidCode };
 
+  await afterOtpLogin();
   const accepted = await supabase.rpc("accept_staff_invitation", { p_token: token });
   if (accepted.error) {
     return { error: accepted.error.code === "42501" ? t.invite.wrongNumber : accepted.error.message };

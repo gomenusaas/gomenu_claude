@@ -1,6 +1,8 @@
 "use client";
 
 import { Alert, cn } from "@gomenu/ui";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { startTransition, useActionState } from "react";
 import type { FormState } from "./form-state";
 
@@ -19,18 +21,31 @@ export function ActionForm({
   children: React.ReactNode;
 }) {
   const [state, formAction] = useActionState(action, undefined);
+  const pathname = usePathname();
   return (
     <form
       action={formAction}
       onSubmit={(event) => {
         event.preventDefault();
-        const formData = new FormData(event.currentTarget);
+        // Include the clicked button's name/value (e.g. status=disabled vs status=removed).
+        const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+        const formData = new FormData(event.currentTarget, submitter);
         startTransition(() => formAction(formData));
       }}
       className={cn("grid gap-4", className)}
       noValidate
     >
-      {state?.error ? <Alert tone="danger">{state.error}</Alert> : null}
+      {state?.error ? (
+        <Alert tone="danger">
+          {state.reauth ? (
+            <Link href={`/reauth?next=${encodeURIComponent(pathname)}`} className="font-medium underline" data-testid="reauth-link">
+              {state.error}
+            </Link>
+          ) : (
+            state.error
+          )}
+        </Alert>
+      ) : null}
       {state?.ok && state.ok !== "ok" ? <Alert tone="success">{state.ok}</Alert> : null}
       {children}
     </form>

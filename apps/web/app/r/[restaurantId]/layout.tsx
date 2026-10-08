@@ -1,6 +1,7 @@
 import { Alert } from "@gomenu/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AutoLock, LockButton } from "@/components/auto-lock";
 import { LanguageSwitch } from "@/components/language-switch";
 import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/context";
@@ -40,10 +41,16 @@ export default async function RestaurantLayout({
   const tone = ["suspended", "retention", "expiring"].includes(status) ? "danger" : status === "trial" ? "info" : "warning";
   const nav = [
     { href: `/r/${restaurantId}`, label: t.dashboard.overview, show: true },
-    { href: `/r/${restaurantId}/setup`, label: t.setup.setupNav, show: can("settings.manage") },
+    { href: `/r/${restaurantId}/menu`, label: t.menu.nav, show: can("menu.view") },
+    { href: `/r/${restaurantId}/branches`, label: t.branches.nav, show: true },
     { href: `/r/${restaurantId}/staff`, label: t.dashboard.staff, show: can("staff.view") },
+    { href: `/r/${restaurantId}/gallery`, label: t.gallery.nav, show: can("gallery.manage") },
+    { href: `/r/${restaurantId}/website`, label: t.website.nav, show: can("website.manage") },
+    { href: `/r/${restaurantId}/settings`, label: t.settings.nav, show: can("settings.manage") || can("website.manage") },
+    { href: `/r/${restaurantId}/setup`, label: t.setup.setupNav, show: can("settings.manage") },
     { href: `/r/${restaurantId}/billing`, label: t.billing.nav, show: can("billing.manage") },
   ];
+  const { data: restaurantRow } = await supabase.from("restaurants").select("staff_auto_lock_minutes").eq("id", restaurantId).single();
 
   return (
     <div className="min-h-dvh">
@@ -51,13 +58,14 @@ export default async function RestaurantLayout({
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
           <div className="flex flex-wrap items-center gap-4">
             <span className="font-semibold">{membership.restaurant_name}</span>
-            <nav className="flex flex-wrap gap-1 text-sm">
+            <nav className="-mx-1 flex max-w-full gap-1 overflow-x-auto text-sm whitespace-nowrap">
               {nav.filter((n) => n.show).map((n) => (
                 <Link key={n.href} className="rounded-md px-2 py-1 hover:bg-muted" href={n.href}>{n.label}</Link>
               ))}
             </nav>
           </div>
           <div className="flex items-center gap-1">
+            <LockButton label={t.security.lock} />
             <Link className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted" href="/account">{t.common.account}</Link>
             <LanguageSwitch locale={locale} label={t.common.switchLanguage} />
             <LogoutButton label={t.common.logout} />
@@ -75,6 +83,7 @@ export default async function RestaurantLayout({
         </div>
       ) : null}
       <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <AutoLock minutes={restaurantRow?.staff_auto_lock_minutes ?? 5} />
     </div>
   );
 }

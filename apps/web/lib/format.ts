@@ -27,3 +27,27 @@ export function daysUntil(iso: string): number {
 export function isWithinDays(iso: string, days: number): boolean {
   return new Date(iso).getTime() - Date.now() <= days * 86_400_000;
 }
+
+/** Milliseconds `timeZone` is ahead of UTC at `date`. */
+function tzOffsetMs(date: Date, timeZone: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    }).formatToParts(date).map((p) => [p.type, p.value]),
+  );
+  const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return asUtc - Math.floor(date.getTime() / 1000) * 1000;
+}
+
+/** A `datetime-local` value entered in the restaurant's time zone → ISO timestamp. */
+export function zonedLocalToIso(local: string, timeZone: string): string {
+  const guess = Date.parse(`${local}:00Z`);
+  return new Date(guess - tzOffsetMs(new Date(guess), timeZone)).toISOString();
+}
+
+/** ISO timestamp → `datetime-local` value in the restaurant's time zone. */
+export function isoToZonedLocal(iso: string, timeZone: string): string {
+  const d = new Date(iso);
+  return new Date(d.getTime() + tzOffsetMs(d, timeZone)).toISOString().slice(0, 16);
+}
