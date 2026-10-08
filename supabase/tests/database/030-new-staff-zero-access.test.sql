@@ -78,6 +78,7 @@ select is(
   0::bigint,
   'New Staff holds none of the permissions, on any branch');
 select ok(not private.is_active_member(tests.id('restaurant_a')), 'New Staff is not an active member');
+select is(public.my_permissions(tests.id('restaurant_a')), '{}'::text[], 'my_permissions() is empty for New Staff');
 select ok(not private.realtime_topic_allowed('restaurant:' || tests.id('restaurant_a')),
           'New Staff cannot join the restaurant realtime channel');
 

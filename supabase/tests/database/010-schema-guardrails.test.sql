@@ -78,6 +78,8 @@ select is(
     'get_invitation_preview:authenticated',
     'get_my_context:authenticated',
     'invite_staff:authenticated',
+    'my_permissions:authenticated',
+    'my_pin_is_set:authenticated',
     'platform_get_restaurant_overview:authenticated',
     'resend_staff_invitation:authenticated'
   ],

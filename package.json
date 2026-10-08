@@ -1,0 +1,26 @@
+{
+  "name": "gomenu",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @gomenu/web dev",
+    "build": "pnpm --filter @gomenu/web build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "tokens": "pnpm --filter @gomenu/ui tokens",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > apps/web/lib/database.types.ts",
+    "test:db": "./scripts/test-db.sh",
+    "test:integration": "pnpm --filter @gomenu/web test:integration",
+    "test:e2e": "pnpm --filter @gomenu/web test:e2e",
+    "test": "pnpm test:db && pnpm test:integration"
+  },
+  "devDependencies": {
+    "supabase": "2.120.0"
+  }
+}
