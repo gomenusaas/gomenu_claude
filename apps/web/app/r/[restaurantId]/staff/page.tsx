@@ -55,7 +55,7 @@ export default async function StaffPage({ params }: { params: Promise<{ restaura
       <section className="grid gap-4">
         <h1 className="text-2xl font-semibold">{t.staff.title}</h1>
         <Card>
-          <CardHeader><CardTitle className="text-base">{t.staff.team}</CardTitle></CardHeader>
+          <CardHeader><CardTitle as="h2" className="text-base">{t.staff.team}</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
             {(members ?? []).length === 0 ? <p className="text-muted-foreground">{t.staff.empty}</p> : null}
             {(members ?? []).map((m) => {
@@ -130,7 +130,7 @@ export default async function StaffPage({ params }: { params: Promise<{ restaura
       <aside className="grid content-start gap-4">
         {can("staff.manage") ? (
           <Card>
-            <CardHeader><CardTitle className="text-base">{t.staff.inviteTitle}</CardTitle></CardHeader>
+            <CardHeader><CardTitle as="h2" className="text-base">{t.staff.inviteTitle}</CardTitle></CardHeader>
             <CardContent>
               <p className="mb-4 text-sm text-muted-foreground">{t.staff.inviteHelp}</p>
               <ActionForm action={inviteStaff}>
@@ -154,7 +154,7 @@ export default async function StaffPage({ params }: { params: Promise<{ restaura
           </Card>
         ) : null}
         <Card>
-          <CardHeader><CardTitle className="text-base">{t.staff.notifications}</CardTitle></CardHeader>
+          <CardHeader><CardTitle as="h2" className="text-base">{t.staff.notifications}</CardTitle></CardHeader>
           <CardContent>
             {(notifications ?? []).length === 0 ? <p className="text-sm text-muted-foreground">{t.staff.noNotifications}</p> : null}
             <ul className="grid gap-2 text-sm">

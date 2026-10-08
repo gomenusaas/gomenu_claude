@@ -1,10 +1,14 @@
 "use client";
 
 import { Alert, cn } from "@gomenu/ui";
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import type { FormState } from "./form-state";
 
-/** A form bound to a server action that returns { error } / { ok } messages. */
+/**
+ * A form bound to a server action that returns { error } / { ok } messages.
+ * Submits via onSubmit so React does not reset the fields: on a validation error the
+ * person keeps what they typed. Without JavaScript the plain `action` still works.
+ */
 export function ActionForm({
   action,
   className,
@@ -16,7 +20,16 @@ export function ActionForm({
 }) {
   const [state, formAction] = useActionState(action, undefined);
   return (
-    <form action={formAction} className={cn("grid gap-4", className)} noValidate>
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startTransition(() => formAction(formData));
+      }}
+      className={cn("grid gap-4", className)}
+      noValidate
+    >
       {state?.error ? <Alert tone="danger">{state.error}</Alert> : null}
       {state?.ok && state.ok !== "ok" ? <Alert tone="success">{state.ok}</Alert> : null}
       {children}

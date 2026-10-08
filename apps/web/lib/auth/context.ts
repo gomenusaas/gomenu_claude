@@ -16,7 +16,12 @@ export interface ActiveMembership {
   role_name: string;
   is_owner: boolean;
   branch_scope: "all" | "selected";
+  restaurant_status: RestaurantStatus;
+  writable: boolean;
 }
+
+export type RestaurantStatus =
+  | "trial" | "active" | "past_due" | "grace" | "suspended" | "retention" | "expiring" | "deleted";
 
 export interface PendingMembership {
   membership_id: string;
@@ -26,7 +31,7 @@ export interface PendingMembership {
 
 export type NextStep =
   | "login" | "verify_phone" | "create_restaurant" | "pending"
-  | "restaurant" | "choose_restaurant" | "platform";
+  | "restaurant" | "choose_restaurant" | "platform" | "restaurant_unavailable";
 
 export interface MyContext {
   authenticated: boolean;
@@ -37,8 +42,10 @@ export interface MyContext {
   email?: string | null;
   locale?: "en" | "ar";
   platform_role?: string | null;
+  aal?: "aal1" | "aal2";
   active_memberships?: ActiveMembership[];
   pending_memberships?: PendingMembership[];
+  unavailable_memberships?: { restaurant_name: string; restaurant_status: RestaurantStatus }[];
 }
 
 /**
@@ -62,6 +69,7 @@ export function pathFor(ctx: MyContext): string {
     case "restaurant": return `/r/${ctx.active_memberships![0].restaurant_id}`;
     case "choose_restaurant": return "/choose";
     case "platform": return "/platform";
+    case "restaurant_unavailable": return "/unavailable";
   }
 }
 

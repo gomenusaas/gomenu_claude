@@ -26,7 +26,7 @@ export default async function RestaurantOverview({ params }: { params: Promise<{
         <p className="text-muted-foreground">{fmt(t.dashboard.role, { role: membership.role_name })}</p>
       </div>
       <Card>
-        <CardHeader><CardTitle className="text-base">{t.dashboard.branches}</CardTitle></CardHeader>
+        <CardHeader><CardTitle as="h2" className="text-base">{t.dashboard.branches}</CardTitle></CardHeader>
         <CardContent>
           <ul className="grid gap-2">
             {(branches ?? []).map((b) => <li key={b.id}>{b.name}</li>)}

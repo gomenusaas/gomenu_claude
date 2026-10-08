@@ -595,6 +595,9 @@ isOneToOne: false
 "get_my_context":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"get_public_contact":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "get_public_pricing":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },

@@ -4,7 +4,11 @@ Multi-tenant SaaS for restaurants: website, QR menu, ordering, staff operations,
 loyalty and reporting. The business rules live in [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md), which
 is the source of truth.
 
-**Status: Phase 1 (Foundation).** Phase 2 does not start until it is confirmed.
+**Status: Phase 2 (Acquisition) complete.** Phase 3 does not start until it is confirmed.
+
+Phase 2 added the marketing site, full registration and onboarding, the free trial, annual
+subscriptions with the billing lifecycle, and the platform admin foundation (see
+[Phase 2](#phase-2-acquisition)).
 
 Phase 1 is done when:
 
@@ -62,8 +66,10 @@ Demo logins from the seed:
 
 | Who | How |
 |---|---|
-| Owner, Muscat Grill (Demo) | email `owner@demo.gomenu.test` / `GoMenuDemo!2026`, or mobile `+96899000001` + OTP from the outbox |
-| Owner, Sohar Café (Demo) | `owner2@demo.gomenu.test` / `GoMenuDemo!2026` |
+| Platform Super Admin | `/platform/login`: `root@demo.gomenu.test` / `GoMenuDemo!2026`, then enrol an authenticator app |
+| Platform Finance | `finance@demo.gomenu.test` / `GoMenuDemo!2026` + authenticator app |
+| Owner, Muscat Grill (Demo), in its trial | email `owner@demo.gomenu.test` / `GoMenuDemo!2026`, or mobile `+96899000001` + OTP from the outbox |
+| Owner, Sohar Café (Demo), on a paid Silver plan | `owner2@demo.gomenu.test` / `GoMenuDemo!2026` |
 | Manager / Waiter (Qurum only) / Kitchen | `+96899000002` / `+96899000003` / `+96899000004` + OTP |
 | New Staff awaiting a role | `+96899000005` + OTP → lands on the pending screen |
 
@@ -73,7 +79,7 @@ Demo logins from the seed:
 ## Tests
 
 ```bash
-pnpm test:db            # pgTAP: 500+ assertions on RLS, isolation, onboarding, audit
+pnpm test:db            # pgTAP: 830 assertions on RLS, isolation, onboarding, audit, billing, lifecycle
 pnpm test:integration   # Vitest against Auth / PostgREST / Storage / Realtime
 pnpm build && PW_CHROMIUM_PATH=... pnpm test:e2e   # Playwright, mobile viewport
 ```
@@ -139,6 +145,68 @@ build and e2e on every push and pull request.
 - **Realtime:** postgres_changes follow table RLS. Private broadcast topics
   `restaurant:{id}` and `restaurant:{id}:branch:{id}` require an active membership in scope.
 
+## Phase 2: Acquisition
+
+### What's included
+- **Marketing site** (`/`, `/features`, `/pricing`, `/contact`, `/terms`, `/privacy`) in
+  English and Arabic. Prices and plan features are read live from the database. Terms and
+  Privacy are **drafts that need legal review**.
+- **Registration:** the owner verifies their mobile, then creates the restaurant. They must
+  accept the Terms (the version and time are recorded). Web addresses used by app/marketing
+  routes are reserved. The owner then lands on a setup checklist: details → branch → team →
+  plan.
+- **Free trial:** 2 months of Gold features. Only one automatic trial per verified owner
+  mobile, ever. Platform Admin can grant an exception, which is audited.
+- **Plans and entitlements:** stored centrally in the database.
+  - `private.has_feature()` and `private.branch_limit()` are the only plan checks; there is no
+    "is Gold" logic in the code.
+  - Silver includes 1 branch, with extra branches at $60/yr. Gold has unlimited branches.
+  - Prices are versioned, and invoices and periods keep the price that applied when they were
+    issued.
+- **Billing without a payment processor (decision P2-Q1):**
+  - The owner chooses a plan and gets an invoice. Tax is configurable and set to 0% for now.
+  - Finance records the bank transfer in Platform Admin. Recording is idempotent per
+    reference, so a payment can't be applied twice.
+  - Recording a payment activates or extends coverage. Paying during the trial starts the
+    paid year when the trial ends.
+  - Extra branches and upgrades are prorated over the rest of the annual term. Downgrades take
+    effect at renewal.
+- **Lifecycle engine** (`private.run_billing_lifecycle`, run hourly by pg_cron). Every
+  duration below can be changed in Platform Admin → Settings:
+
+  | State | When | What happens |
+  |---|---|---|
+  | Trial / Active | covered by a trial or paid period | normal |
+  | Past Due | 0–7 days after coverage ends | normal + renewal banner; renewal invoice issued |
+  | Grace | next 21 days | normal + "overdue" banner |
+  | Suspended | next 30 days | **public site offline, owners read-only, staff blocked** |
+  | Retention | next 180 days | same as Suspended; data and domain config kept |
+  | Expiring | next 30 days | same + final warnings |
+  | Deleted | after that | no access for anyone (data purge job: later phase) |
+
+  Every transition is written to the restaurant audit and the platform audit, and notifies
+  the owners. A **tenant write guard** trigger blocks user writes while a restaurant is not
+  writable. A guardrail test fails CI if any tenant table lacks the guard and is not on the
+  reviewed exception list.
+- **Platform admin** (`/platform`):
+  - Sign-in is email + password + authenticator app. MFA is required for every platform role
+    and is enforced in the database (`aal2`).
+  - Pages: overview, restaurants (listing and detail are audited), invoices (record or void
+    payments), plans and prices, entitlement matrix, per-restaurant overrides, trial
+    exceptions, manual suspension, settings, platform staff and the platform audit log.
+  - Each RPC checks the caller's role. The console is English-only.
+
+### First Super Admin on a hosted environment
+Create the user in Supabase Auth with a strong password and a confirmed email, then run once
+(SQL editor or `psql`). Record the run, because there must be no undocumented dashboard
+changes:
+```sql
+insert into public.platform_staff (user_id, role)
+select id, 'super_admin' from auth.users where email = '<their email>';
+```
+On first sign-in at `/platform/login` they must enrol an authenticator app. After that, they
+add other staff from Platform Admin → Staff.
+
 ## Design system
 
 `packages/ui/tokens/tokens.json` is the single source of design values. `pnpm tokens` turns it
@@ -159,6 +227,9 @@ Nothing here has been deployed yet. To bring the dev environment up:
    psql "$DEV_DB_URL" -f supabase/seed.sql   # dev only, never staging/production
    ```
 2. **Auth settings** (record every change here; no undocumented dashboard changes):
+   - MFA: authenticator app (TOTP) enrolment and verification enabled. Platform staff need it.
+   - `pg_cron` is created by the migrations. Confirm the `gomenu-billing-lifecycle` job exists
+     in the `cron.job` table.
    - Phone provider on.
    - Phone and email confirmations **required**.
    - Send SMS hook → Postgres function `private.hook_send_sms`. In dev this delivers into the
@@ -190,8 +261,38 @@ Nothing here has been deployed yet. To bring the dev environment up:
 | Q12 / In1 | Audit is kept forever with a full actor snapshot (name, phone, email) |
 | Q13 | Restaurant = tenant; there is no organization level |
 | Q14 | Hosted projects exist: Supabase dev `xqcrerkervzeyzjtmruk`, Vercel `gomenu_claude` |
+| P2-Q1 | No subscription processor yet: Finance records payments manually; processor is pluggable later. Prices shown in USD |
+| P2-Q2 | Silver $120/yr, Gold $180/yr, extra branch $60/yr (configurable records) |
+| P2-Q3 | Gold includes unlimited branches |
+| P2-Q4 | The trial unlocks full Gold |
+| P2-Q5 | One automatic trial per verified owner mobile, ever; Platform can grant audited exceptions |
+| P2-Q6 | Suspended: site offline, owner read-only, staff blocked |
+| P2-Q7 | Platform staff: email + password + authenticator app (MFA) for every platform role |
+| P2-Q8 | Tax configurable, 0% until confirmed |
+| P2-Q9 | WhatsApp/SMS provider still undecided |
+| P2-Q10 | Marketing copy drafted in EN+AR; Terms/Privacy are drafts for legal review |
 
 ## Known limitations and follow-ups
+
+**Phase 2**
+- **Who on the platform can see restaurants (my reading of Q11).** A restaurant's billing
+  account (name, slug, status, plan, invoices, payments) counts as platform data. Super Admin,
+  Admin, Finance and Support can see it, and every listing or detail view is audited. Tenant
+  operational data (staff, branches, audit) is still Super Admin only, through the audited
+  overview RPC.
+- **A restaurant created without a trial** (the owner's mobile already used one) starts in Past
+  Due. It runs through Past Due and Grace (about 28 days) before suspension, and has no plan
+  features until it pays. Tighten this if that window is too generous.
+- **Deleted** is a status only. Purging data needs a retention/erasure policy, which is also
+  needed for the audit-vs-privacy conflict.
+- **No real payment processor** (P2-Q1) and **no real WhatsApp/SMS sender** (P2-Q9): hosted
+  owners can only be activated by Finance recording payments, and OTPs only work through
+  `/dev/outbox` on dev.
+- The platform console is English-only.
+- Invoices are on-screen records only (no PDF yet); bank details come from the
+  `bank_transfer_instructions` setting.
+
+**Phase 1**
 
 - **Audit vs. privacy.** Full snapshots kept forever cannot be erased. This conflicts with the
   diner privacy controls in §12 and needs a retention policy before Phase 6.

@@ -1,9 +1,12 @@
+import { Alert } from "@gomenu/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LanguageSwitch } from "@/components/language-switch";
 import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/context";
-import { getDictionary } from "@/lib/i18n";
+import { daysUntil } from "@/lib/format";
+import { fmt, getDictionary } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function RestaurantLayout({
   children,
@@ -14,21 +17,44 @@ export default async function RestaurantLayout({
 }) {
   const { restaurantId } = await params;
   const ctx = await requireUser();
-  // Only ACTIVE memberships appear here; New Staff and outsiders get a 404, and RLS would
-  // return no rows anyway.
+  // Only memberships the database reports as accessible appear here; others get a 404, and
+  // RLS would return no rows anyway.
   const membership = ctx.active_memberships?.find((m) => m.restaurant_id === restaurantId);
   if (!membership) notFound();
   const { locale, t } = await getDictionary();
+  const supabase = await createClient();
+  const { data: perms } = await supabase.rpc("my_permissions", { p_restaurant_id: restaurantId });
+  const can = (p: string) => (perms ?? []).includes(p);
+
+  // Owners see their trial countdown; everyone sees lifecycle warnings.
+  let trialEndsAt: string | null = null;
+  if (membership.restaurant_status === "trial" && can("billing.manage")) {
+    const { data } = await supabase.rpc("restaurant_billing_overview", { p_restaurant_id: restaurantId });
+    trialEndsAt = (data as { current_period?: { ends_at: string } } | null)?.current_period?.ends_at ?? null;
+  }
+  const status = membership.restaurant_status;
+  const bannerText =
+    status === "trial"
+      ? trialEndsAt && daysUntil(trialEndsAt) <= 14 ? fmt(t.banner.trial, { days: daysUntil(trialEndsAt) }) : null
+      : status === "active" ? null : t.banner[status as keyof typeof t.banner];
+  const tone = ["suspended", "retention", "expiring"].includes(status) ? "danger" : status === "trial" ? "info" : "warning";
+  const nav = [
+    { href: `/r/${restaurantId}`, label: t.dashboard.overview, show: true },
+    { href: `/r/${restaurantId}/setup`, label: t.setup.setupNav, show: can("settings.manage") },
+    { href: `/r/${restaurantId}/staff`, label: t.dashboard.staff, show: can("staff.view") },
+    { href: `/r/${restaurantId}/billing`, label: t.billing.nav, show: can("billing.manage") },
+  ];
 
   return (
     <div className="min-h-dvh">
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <span className="font-semibold">{membership.restaurant_name}</span>
-            <nav className="flex gap-1 text-sm">
-              <Link className="rounded-md px-2 py-1 hover:bg-muted" href={`/r/${restaurantId}`}>{t.dashboard.overview}</Link>
-              <Link className="rounded-md px-2 py-1 hover:bg-muted" href={`/r/${restaurantId}/staff`}>{t.dashboard.staff}</Link>
+            <nav className="flex flex-wrap gap-1 text-sm">
+              {nav.filter((n) => n.show).map((n) => (
+                <Link key={n.href} className="rounded-md px-2 py-1 hover:bg-muted" href={n.href}>{n.label}</Link>
+              ))}
             </nav>
           </div>
           <div className="flex items-center gap-1">
@@ -38,6 +64,16 @@ export default async function RestaurantLayout({
           </div>
         </div>
       </header>
+      {bannerText ? (
+        <div className="mx-auto max-w-5xl px-4 pt-4">
+          <Alert tone={tone} data-testid="lifecycle-banner" className="flex flex-wrap items-center justify-between gap-2">
+            <span>{bannerText}</span>
+            {can("billing.manage") ? (
+              <Link href={`/r/${restaurantId}/billing`} className="font-medium underline">{t.banner.action}</Link>
+            ) : null}
+          </Alert>
+        </div>
+      ) : null}
       <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
     </div>
   );

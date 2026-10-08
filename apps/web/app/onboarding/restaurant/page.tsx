@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input } from "@gomenu/ui";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createRestaurant } from "@/app/actions/onboarding";
 import { ActionForm } from "@/components/action-form";
@@ -37,6 +38,14 @@ export default async function RestaurantOnboarding() {
             <Field id="password" label={t.onboarding.passwordOptional}>
               <Input name="password" type="password" autoComplete="new-password" minLength={8} />
             </Field>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="accept_terms" className="mt-1" required />
+              <span>
+                {t.terms.accept.split("{terms}")[0]}
+                <Link href="/terms" target="_blank" className="text-accent underline">{t.terms.termsLink}</Link>
+                {t.terms.accept.split("{terms}")[1]}
+              </span>
+            </label>
             <SubmitButton block>{t.onboarding.submit}</SubmitButton>
           </ActionForm>
         </CardContent>

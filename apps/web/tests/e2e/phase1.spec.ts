@@ -51,13 +51,19 @@ test.describe.serial("Phase 1: owner registers, invites staff; New Staff has zer
     await page.getByLabel("Restaurant name").fill("E2E Kitchen");
     await page.getByLabel("Web address").fill(slug);
     await page.getByLabel("First branch name").fill("Ruwi");
+    await page.getByRole("button", { name: "Create restaurant" }).click();
+    await expect(page.getByText("Please accept the Terms of Service to continue.")).toBeVisible();
+    await page.getByLabel("I accept the Terms of Service").check();
     await shot(page, "02-onboarding");
     await page.getByRole("button", { name: "Create restaurant" }).click();
 
+    // New restaurants land on the setup checklist (Phase 2).
+    await expect(page.getByRole("heading", { name: "Get your restaurant ready" })).toBeVisible();
+    restaurantPath = new URL(page.url()).pathname.replace(/\/setup$/, "");
+    expect(restaurantPath).toMatch(/^\/r\/[0-9a-f-]{36}$/);
+    await page.goto(restaurantPath);
     await expect(page.getByRole("heading", { name: "Welcome, Noor Owner" })).toBeVisible();
     await expect(page.getByText("Your role: Owner")).toBeVisible();
-    restaurantPath = new URL(page.url()).pathname;
-    expect(restaurantPath).toMatch(/^\/r\/[0-9a-f-]{36}$/);
     await shot(page, "03-dashboard");
 
     // Logging back in later goes straight to the restaurant (routing decided by the DB).

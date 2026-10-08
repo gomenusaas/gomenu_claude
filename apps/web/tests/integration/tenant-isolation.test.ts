@@ -31,7 +31,8 @@ describe("tenant isolation over the API", () => {
 
   it("B's owner can see B's rows (control: the checks below are not vacuous)", async () => {
     for (const { table, column } of await tenantTables()) {
-      if (table.startsWith("platform_")) continue; // platform data is never tenant-visible
+      // platform-only data is never tenant-visible (trial grants, entitlement overrides)
+      if (table.startsWith("platform_") || ["trial_grants", "restaurant_entitlement_overrides"].includes(table)) continue;
       const { rows } = await db.query(`select count(*)::int as n from public.${table} where ${column} = $1`, [b.restaurantId]);
       if (rows[0].n === 0) continue;
       const { data, error } = await b.client.from(table as "restaurants").select(column as "id").eq(column as "id", b.restaurantId);

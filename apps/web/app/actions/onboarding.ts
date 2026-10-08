@@ -15,14 +15,16 @@ export async function createRestaurant(_: FormState, formData: FormData): Promis
   const branch = String(formData.get("branch") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!name) return { error: t.common.unexpectedError };
+  if (!name) return { error: t.onboarding.nameRequired };
   if (!SLUG.test(slug)) return { error: t.onboarding.slugInvalid };
+  if (formData.get("accept_terms") !== "on") return { error: t.terms.required };
 
   const supabase = await createClient();
   const { data: restaurantId, error } = await supabase.rpc("create_restaurant", {
     p_name: name,
     p_slug: slug,
     p_branch_name: branch || undefined,
+    p_accept_terms: true,
   });
   if (error) return { error: error.code === "23505" ? t.onboarding.slugTaken : error.message };
 
@@ -35,5 +37,5 @@ export async function createRestaurant(_: FormState, formData: FormData): Promis
       { emailRedirectTo: `${publicEnv.NEXT_PUBLIC_APP_URL}/auth/confirm` },
     );
   }
-  redirect(`/r/${restaurantId}`);
+  redirect(`/r/${restaurantId}/setup`);
 }

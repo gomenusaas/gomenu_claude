@@ -82,6 +82,8 @@ select is(
     'get_invitation_preview:anon',
     'get_invitation_preview:authenticated',
     'get_my_context:authenticated',
+    'get_public_contact:anon',
+    'get_public_contact:authenticated',
     'get_public_pricing:anon',
     'get_public_pricing:authenticated',
     'invite_staff:authenticated',

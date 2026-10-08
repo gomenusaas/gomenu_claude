@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import pg from "pg";
 import type { Database } from "../../lib/database.types";
+import { totp } from "../shared/totp";
 
 // Defaults are the well-known LOCAL Supabase development keys (identical on every machine).
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -60,6 +61,7 @@ export async function registerOwner(name: string) {
     p_name: `${name} Restaurant`,
     p_slug: slug,
     p_branch_name: `${name} Main`,
+    p_accept_terms: true,
   });
   if (error) throw error;
   return { client, phone, restaurantId: restaurantId as string };
@@ -77,4 +79,26 @@ export async function tenantTables(): Promise<{ table: string; column: string }[
       where table_schema = 'public' and column_name = 'restaurant_id' order by 1`,
   );
   return [{ table: "restaurants", column: "id" }, ...rows.map((r) => ({ table: r.table_name as string, column: "restaurant_id" }))];
+}
+
+/** A platform staff member signed in with email + password and upgraded to aal2 via TOTP. */
+export async function platformStaff(role: string): Promise<{ aal1: Client; aal2: Client }> {
+  const email = `${role}-${Math.random().toString(36).slice(2, 8)}@gomenu.test`;
+  const password = `Pw-${Math.random().toString(36).slice(2)}-Aa1!`;
+  const admin = serviceClient();
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  if (created.error) throw created.error;
+  await db.query("insert into public.platform_staff (user_id, role) values ($1, $2)", [created.data.user.id, role]);
+
+  const aal1 = anonClient();
+  const login = await aal1.auth.signInWithPassword({ email, password });
+  if (login.error) throw login.error;
+
+  const aal2 = anonClient();
+  await aal2.auth.signInWithPassword({ email, password });
+  const enrolled = await aal2.auth.mfa.enroll({ factorType: "totp" });
+  if (enrolled.error) throw enrolled.error;
+  const verified = await aal2.auth.mfa.challengeAndVerify({ factorId: enrolled.data.id, code: totp(enrolled.data.totp.secret) });
+  if (verified.error) throw verified.error;
+  return { aal1, aal2 };
 }
