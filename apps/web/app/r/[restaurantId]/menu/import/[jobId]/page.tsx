@@ -72,10 +72,12 @@ export default async function ImportJobPage({ params }: { params: Promise<{ rest
                         <input type="checkbox" name={`item:${ci}:${ii}:include`} defaultChecked />
                         <span className="sm:sr-only">{t.ai.include}</span>
                       </label>
-                      <Input name={`item:${ci}:${ii}:name`} defaultValue={item.name} aria-label={fmt(t.menu.itemName, { lang: "" })} />
-                      <Input name={`item:${ci}:${ii}:description`} defaultValue={item.description ?? ""} aria-label={fmt(t.menu.itemDescription, { lang: "" })} />
+                      <Input name={`item:${ci}:${ii}:name`} defaultValue={item.name} aria-label={fmt(t.menu.itemName, { lang: "" })}
+                             placeholder={fmt(t.menu.itemName, { lang: "" }).replace(" ()", "")} />
+                      <Input name={`item:${ci}:${ii}:description`} defaultValue={item.description ?? ""} aria-label={fmt(t.menu.itemDescription, { lang: "" })}
+                             placeholder={fmt(t.menu.itemDescription, { lang: "" }).replace(" ()", "")} />
                       <Input name={`item:${ci}:${ii}:price`} defaultValue={minorToInput(item.price_minor, r.currency)} inputMode="decimal" dir="ltr"
-                             aria-label={fmt(t.menu.price, { currency: r.currency })} />
+                             aria-label={fmt(t.menu.price, { currency: r.currency })} placeholder={fmt(t.menu.price, { currency: r.currency })} />
                     </div>
                   ))}
                 </fieldset>

@@ -239,5 +239,11 @@ select is(tests.try_sql(format('select public.restaurant_dashboard(%L)', tests.i
           'no dashboard for another restaurant');
 reset role;
 
+-- ===== Credit pack price ====================================================================
+select tests.authenticate_as('owner_a');
+select is(public.ai_credit_pack_info(), '{"size": 100, "amount_minor": 500, "currency": "USD"}'::jsonb,
+          'owners see the credit pack size and price before buying');
+reset role;
+
 select * from finish();
 rollback;

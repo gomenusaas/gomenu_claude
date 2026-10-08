@@ -102,3 +102,20 @@ export async function platformStaff(role: string): Promise<{ aal1: Client; aal2:
   if (verified.error) throw verified.error;
   return { aal1, aal2 };
 }
+
+/** Invite + accept + verify: a staff member in the New Staff state (no role, zero access). */
+export async function newStaff(owner: { client: Client; restaurantId: string }) {
+  const phone = randomPhone();
+  const invited = await owner.client.rpc("invite_staff", {
+    p_restaurant_id: owner.restaurantId, p_full_name: "New Staff", p_phone_e164: phone,
+  });
+  if (invited.error) throw invited.error;
+  const { token } = await latestOutbox(phone, "staff_invitation");
+  await serviceClient().rpc("open_invitation", { p_token: token });
+  const client = await signInWithPhone(phone);
+  const accepted = await client.rpc("accept_staff_invitation", { p_token: token });
+  if (accepted.error) throw accepted.error;
+  const verified = await client.rpc("complete_staff_verification", { p_membership_id: accepted.data as string, p_pin: "583920" });
+  if (verified.error) throw verified.error;
+  return { client, phone, membershipId: accepted.data as string };
+}

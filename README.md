@@ -4,7 +4,12 @@ Multi-tenant SaaS for restaurants: website, QR menu, ordering, staff operations,
 loyalty and reporting. The business rules live in [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md), which
 is the source of truth.
 
-**Status: Phase 2 (Acquisition) complete.** Phase 3 does not start until it is confirmed.
+**Status: Phase 3 (Restaurant core) complete.** Phase 4 does not start until it is confirmed.
+
+Phase 3 added shared-device security (PIN lock and staff switcher, trusted devices,
+re-authentication), staff management, restaurant settings, branches and opening hours,
+languages, the master menu with media, the gallery, AI menu import and translation with
+credits, website settings and custom domains (see [Phase 3](#phase-3-restaurant-core)).
 
 Phase 2 added the marketing site, full registration and onboarding, the free trial, annual
 subscriptions with the billing lifecycle, and the platform admin foundation (see
@@ -79,7 +84,7 @@ Demo logins from the seed:
 ## Tests
 
 ```bash
-pnpm test:db            # pgTAP: 830 assertions on RLS, isolation, onboarding, audit, billing, lifecycle
+pnpm test:db            # pgTAP: 1,410 assertions on RLS, isolation, onboarding, audit, billing, lifecycle, menu, AI, domains
 pnpm test:integration   # Vitest against Auth / PostgREST / Storage / Realtime
 pnpm build && PW_CHROMIUM_PATH=... pnpm test:e2e   # Playwright, mobile viewport
 ```
@@ -207,6 +212,83 @@ select id, 'super_admin' from auth.users where email = '<their email>';
 On first sign-in at `/platform/login` they must enrol an authenticator app. After that, they
 add other staff from Platform Admin → Staff.
 
+## Phase 3: Restaurant core
+
+### What's included
+- **Shared-device security.** Logging in with a mobile code makes the browser a *trusted
+  device*. The device cookie (`gm_device`) is a random, httpOnly token; the database stores
+  only its hash. **Lock** (button, or automatic after the restaurant's idle time) parks the
+  session: the refresh token is sealed with AES-256-GCM (`GOMENU_SESSION_KEY`) in
+  `private.device_sessions` and the browser's auth cookies are cleared. `/lock` lists the
+  people parked on this device. A correct PIN (with lockout after repeated failures, every
+  failure audited) restores that person's own session. An email+password login never trusts
+  a device, so locking it logs out instead.
+- **Re-authentication.** Sensitive changes (PIN, staff phone, PIN reset, owner/admin role
+  changes, security settings) require a mobile code from the last 10 minutes. The form links
+  to `/reauth`, which returns the person to where they were.
+- **Devices and sessions:** `/account` lists trusted devices (revoke one) and has *Log out of
+  all devices*, which ends every session including parked ones.
+- **Staff management:** change role, disable/enable, lock, remove, change mobile (the new
+  number must verify again) and reset PIN; all audited.
+- **Settings:** profile (tagline/description per language, contacts, social links, time zone,
+  invitation lifetime), logo and cover (compressed to WebP in the browser), languages, and the
+  shared-device auto-lock time.
+- **Branches:** details, map link and coordinates, weekly hours (overnight periods allowed),
+  a manual open/closed override with an optional end time (in the restaurant's time zone),
+  live open/closed status, and archiving. The plan's branch limit is enforced in the database.
+- **Languages:** the platform enables languages (`/platform/languages`); each restaurant turns
+  on the ones it wants. English and Arabic are on by default.
+- **Menu:** one master menu per restaurant. Categories and items have per-language text,
+  ordering, show/hide, sold out, archive (never delete), allergens, dietary tags, spice
+  level, calories, variants, option groups/add-ons and per-branch availability. Prices are
+  integers in minor units of the restaurant currency (OMR has 3 decimals).
+- **Media:** photos are resized and compressed to WebP in the browser; videos up to 15 MB with
+  a poster frame. Per-item image/video limits and the gallery come from the plan.
+- **AI (Claude).** *Import*: upload a PDF or photo of a menu; Claude reads categories, items
+  and prices; the owner edits and unticks, then publishes. *Translation*: the whole menu or a
+  category into an active language; results are saved as **AI drafts** until a person marks
+  them reviewed (editing a draft's text also counts as reviewing it). **Credits:** 1 credit =
+  1 item imported, or 1 item translated into one language. New restaurants get 100 free
+  credits; packs of 100 are bought on the billing page (an invoice, applied when Finance
+  records payment). Platform Admin can adjust credits, and the adjustment is audited.
+- **Website settings:** web address (old addresses keep redirecting), menu style, sections,
+  ordering/payment toggles (saved now; ordering arrives in Phase 5), SEO text, published flag.
+  The public website itself is Phase 4.
+- **Custom domains (Gold):** add a domain → the DNS records to create → automatic checks
+  (when the page is viewed, at most once a minute, and by a daily cron) → *Active* → *Main
+  address*. A domain can belong to one restaurant only.
+- **Dashboard:** real numbers (menu, sold out, drafts to review, staff, AI credits, website,
+  branch open/closed), each part shown only with the matching permission.
+
+### How Claude is used
+`apps/web/lib/ai/` holds a small provider interface with two implementations:
+- `anthropic.ts` uses the official SDK with model `claude-opus-5-5`, streaming,
+  structured JSON output validated with zod, and explicit handling of `refusal` and
+  `max_tokens` stop reasons. Images and PDFs are sent as image/document blocks.
+  **The server-side refusal fallback is enabled** (`fallbacks: "default"`, beta
+  `server-side-fallback-2026-07-01`): if Claude declines a request on policy grounds, the API
+  retries it on Anthropic's recommended fallback model within the same call instead of failing
+  the import.
+- `fake.ts` is deterministic (`GOMENU_AI_PROVIDER=fake`) and is used by every automated test.
+
+The browser never talks to Claude. The import file goes to private storage under
+`{restaurant}/imports/`; the job is created as the signed-in person (permission, plan and
+credit checks in the database); only the AI result is recorded with the service role, through
+RPCs that browsers cannot call (`complete_menu_import`, `complete_translation`,
+`fail_ai_job`). Credits are charged per item in the same transaction.
+
+### How custom domains work
+`apps/web/lib/domains/` has a Vercel implementation (Domains API: add to the project, read
+verification and DNS configuration, verify, remove) and a stand-in used when `VERCEL_TOKEN`
+is not set. Statuses are recorded through the service-role-only `set_domain_status`.
+`vercel.json` schedules `/api/cron/domains` daily (Vercel Hobby allows daily crons; on Pro it
+can run more often). Requests must carry `Authorization: Bearer $CRON_SECRET`.
+
+### Phase 3 settings to add on Vercel
+`GOMENU_SESSION_KEY` (`openssl rand -base64 32`), `ANTHROPIC_API_KEY`, `VERCEL_TOKEN`
+(scoped to the team), `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `CRON_SECRET`. Mark all of them
+as sensitive. Leave `GOMENU_AI_PROVIDER` unset in hosted environments.
+
 ## Design system
 
 `packages/ui/tokens/tokens.json` is the single source of design values. `pnpm tokens` turns it
@@ -271,8 +353,31 @@ Nothing here has been deployed yet. To bring the dev environment up:
 | P2-Q8 | Tax configurable, 0% until confirmed |
 | P2-Q9 | WhatsApp/SMS provider still undecided |
 | P2-Q10 | Marketing copy drafted in EN+AR; Terms/Privacy are drafts for legal review |
+| P3-Q1 | All of Phase 3 delivered at once |
+| P3-Q2 | AI provider: Anthropic Claude |
+| P3-Q3 | 1 credit = 1 menu item (imported, or translated into one language) |
+| P3-Q4 | Custom domains through the Vercel Domains API |
+| P3-Q5 | PIN unlock is bound to a trusted device |
+| P3-Q6 | Recommended defaults, applied without further questions: re-authentication = a mobile code within 10 minutes; EN+AR enabled on the platform and restaurants activate their own; images compressed to WebP in the browser; videos ≤ 15 MB; Claude and Vercel behind provider interfaces with deterministic stand-ins for tests |
 
 ## Known limitations and follow-ups
+
+**Phase 3**
+- **One opening period per day** in the hours editor (the database accepts several; the UI
+  edits one). Split shifts need a second row in the UI.
+- **Imports run inside the request** (up to 300 s on Vercel). Very long PDFs can hit
+  `max_tokens`; the owner sees a message asking to split the file. A background queue would
+  remove this limit.
+- **No real AI or Vercel calls were made while building this.** Both are covered by their
+  stand-ins; the Claude and Vercel code paths need one manual check on the dev environment
+  with real keys.
+- **HTTPS status** is inferred: Vercel issues certificates automatically once DNS points at
+  it, and a domain is marked *Active* when HTTPS answers (otherwise *SSL pending*).
+- **Locking needs a trusted device.** If someone signed in with email + password, Lock logs
+  them out (they can sign in with a mobile code to make the device trusted).
+- **Re-authentication on hosted environments:** GoTrue allows one code per number every 60 s,
+  so someone who logs in and immediately opens a sensitive form may be asked to wait a minute.
+- The public website, templates and QR menu that use these settings are Phase 4.
 
 **Phase 2**
 - **Who on the platform can see restaurants (my reading of Q11).** A restaurant's billing
@@ -299,9 +404,10 @@ Nothing here has been deployed yet. To bring the dev environment up:
 - **Message delivery.** No real sender exists yet. Invitation links (raw tokens) sit in
   `private.message_outbox`, which only the service role can read, until a sender delivers them.
   The sender should clear the token from the payload after delivery.
-- **Phase 3 items not built:** PIN login, new-device detection, staff switcher, auto-lock,
-  logout on all devices, forgot-PIN, owner re-authentication for sensitive actions, Super Admin
-  MFA enrolment UI, and application-level rate limiting beyond Supabase Auth's built-ins.
+- **Done in Phase 3:** PIN unlock, staff switcher, auto-lock, log out of all devices,
+  re-authentication. *Forgot PIN* = log in with a mobile code and set a new PIN in `/account`
+  (managers can also reset a staff member's PIN). Still open: alerts when a new device signs in,
+  and application-level rate limiting beyond Supabase Auth and the PIN lockout.
 - **Pending screen** checks for a role every 30 seconds instead of using Realtime. This is
   deliberate: New Staff have no realtime channel access.
 - **A verified New Staff member can still create their own restaurant** via `create_restaurant`.

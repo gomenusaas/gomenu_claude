@@ -55,21 +55,22 @@ export default async function RestaurantLayout({
   return (
     <div className="min-h-dvh">
       <header className="border-b">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="font-semibold">{membership.restaurant_name}</span>
-            <nav className="-mx-1 flex max-w-full gap-1 overflow-x-auto text-sm whitespace-nowrap">
-              {nav.filter((n) => n.show).map((n) => (
-                <Link key={n.href} className="rounded-md px-2 py-1 hover:bg-muted" href={n.href}>{n.label}</Link>
-              ))}
-            </nav>
+        <div className="mx-auto grid max-w-5xl gap-2 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="min-w-0 truncate font-semibold">{membership.restaurant_name}</span>
+            <div className="flex flex-wrap items-center gap-1">
+              <LockButton label={t.security.lock} />
+              <Link className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted" href="/account">{t.common.account}</Link>
+              <LanguageSwitch locale={locale} label={t.common.switchLanguage} />
+              <LogoutButton label={t.common.logout} />
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <LockButton label={t.security.lock} />
-            <Link className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted" href="/account">{t.common.account}</Link>
-            <LanguageSwitch locale={locale} label={t.common.switchLanguage} />
-            <LogoutButton label={t.common.logout} />
-          </div>
+          {/* Scrolls sideways on phones instead of widening the page. */}
+          <nav className="-mx-1 flex min-w-0 gap-1 overflow-x-auto text-sm whitespace-nowrap">
+            {nav.filter((n) => n.show).map((n) => (
+              <Link key={n.href} className="rounded-md px-2 py-1 hover:bg-muted" href={n.href}>{n.label}</Link>
+            ))}
+          </nav>
         </div>
       </header>
       {bannerText ? (
