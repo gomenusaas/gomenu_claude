@@ -103,7 +103,7 @@ Restaurants toggle online ordering and online payment independently. With orderi
 **Payment timing** (per service type): pay before serving or after. Suggested defaults: table after, car before, pickup before preparation. When confirmation is required, payment is allowed only after confirmation.
 
 ## 11. Payments
-- Each restaurant connects its own merchant gateway; funds settle to the restaurant, and GoMenu doesn't hold customer funds. [Decision: launch gateway(s) for Oman]
+- Each restaurant connects its own merchant gateway; funds settle to the restaurant, and GoMenu doesn't hold customer funds. [THAWANI gateway, Omani Company]
 - Platform manages gateways (country, currency, sandbox/production, methods, webhooks, status: Draft, Testing, Active, Disabled, Retired). Restaurants see only gateways eligible for their market, plan, and status. Restaurant connection statuses: Not Connected, Connected, Verification Required, Error, Disabled.
 - Methods: cards, Apple Pay, Google Pay, local methods; offline (cash, card at restaurant) is recorded separately.
 - Payment success is confirmed only by verified, idempotent webhooks, never the browser redirect.
