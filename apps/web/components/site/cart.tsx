@@ -180,7 +180,7 @@ export function AddToCart({ restaurantId, item, tx, price, labels, branchId, loc
         <input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200}
                className="h-10 rounded-[var(--gm-radius)] border border-current/20 bg-transparent px-3" />
       </label>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2" role="group" aria-label={labels.quantity}>
           <button type="button" className="gm-chip size-9 justify-center" aria-label={labels.decrease}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}>−</button>
@@ -204,9 +204,9 @@ export function CartBar({ restaurantId, href, label, itemsLabel, oneItemLabel, c
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 p-3">
       <Link href={href} data-testid="cart-bar"
-            className="gm-go pointer-events-auto mx-auto flex max-w-xl items-center justify-between gap-3 shadow-lg">
-        <span>{label} · {cart.count === 1 ? oneItemLabel : fmt(itemsLabel, { n: cart.count })}</span>
-        <span>{money(cart.subtotal, currency, locale)}</span>
+            className="gm-go pointer-events-auto mx-auto flex w-full max-w-xl items-center justify-between gap-3 shadow-lg">
+        <span className="min-w-0 truncate">{label} · {cart.count === 1 ? oneItemLabel : fmt(itemsLabel, { n: cart.count })}</span>
+        <span className="shrink-0">{money(cart.subtotal, currency, locale)}</span>
       </Link>
     </div>
   );

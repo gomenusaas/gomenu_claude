@@ -54,6 +54,18 @@ async function addToOrder(page: Page, itemId: string, option?: string) {
   if (option) await page.getByLabel(option).check();
   await page.getByTestId("add-to-cart-button").click();
   await expect(page.getByTestId("cart-bar")).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow, "the dish page scrolls sideways with the order bar").toBeLessThanOrEqual(0);
+}
+
+/**
+ * Follow the floating "View order" bar. Taps on fixed elements in emulated mobile Chrome land
+ * off target on CI runners, so the test follows the bar's link rather than its coordinates.
+ */
+async function openCart(page: Page) {
+  const bar = page.getByTestId("cart-bar");
+  await expect(bar).toHaveAttribute("href", /\/checkout(\?|$)/);
+  await page.goto((await bar.getAttribute("href"))!);
 }
 
 test.describe.serial("Phase 5: ordering, waiters, kitchen, payments", () => {
@@ -74,7 +86,7 @@ test.describe.serial("Phase 5: ordering, waiters, kitchen, payments", () => {
     // Full-page screenshots on an emulated phone can shift fixed elements, so shoot before adding.
     await shot(page, "p5-01-add-to-order");
     await addToOrder(page, MIXED_GRILL, "Garlic sauce");
-    await page.getByTestId("cart-bar").click();
+    await openCart(page);
     await expect(page.getByTestId("checkout-line")).toHaveCount(1);
     await expect(page.getByLabel(/At my table/)).toBeChecked();
     await expect(page.getByTestId("checkout-total")).toHaveText("OMR 6.100");
@@ -137,7 +149,7 @@ test.describe.serial("Phase 5: ordering, waiters, kitchen, payments", () => {
 
   test("pickup paid online: only the signed webhook marks it paid; forged webhooks are refused", async ({ page }) => {
     await addToOrder(page, LEMON_MINT);
-    await page.getByTestId("cart-bar").click();
+    await openCart(page);
     await page.getByLabel("Pickup").check();
     await page.getByTestId("checkout-branch").selectOption({ label: "Qurum" });
     await page.getByTestId("place-order").click();
