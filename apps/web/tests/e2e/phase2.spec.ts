@@ -47,6 +47,8 @@ test.describe.serial("Phase 2: marketing → trial → plan → platform payment
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("أسعار سنوية بسيطة");
     await shot(page, "p2-02-pricing-ar");
     await page.getByRole("button", { name: "English" }).first().click();
+    // The language is saved by a server action; wait for it before navigating away.
+    await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
     await page.goto("/terms");
     await expect(page.getByText("Draft for legal review")).toBeVisible();
   });
