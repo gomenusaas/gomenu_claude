@@ -45,7 +45,7 @@ select is(
                          and c.column_name = 'restaurant_id')
       and t.tablename not in ('restaurants', 'profiles', 'permissions', 'role_permissions', 'platform_staff',
                               'platform_settings', 'features', 'plans', 'plan_entitlements', 'billing_prices',
-                              'reserved_slugs', 'platform_languages', 'user_devices')),
+                              'reserved_slugs', 'platform_languages', 'user_devices', 'website_templates')),
   null,
   'every public table carries restaurant_id or is a reviewed global table'
 );
@@ -75,10 +75,12 @@ select is(
     'ai_credit_balance:authenticated',
     'ai_credit_pack_info:authenticated',
     'apply_menu_import:authenticated',
+    'archive_table:authenticated',
     'assign_staff_role:authenticated',
     'branch_open_status:authenticated',
     'buy_ai_credits:authenticated',
     'buy_extra_branches:authenticated',
+    'buy_template:authenticated',
     'cancel_ai_job:authenticated',
     'cancel_staff_invitation:authenticated',
     'change_restaurant_slug:authenticated',
@@ -87,7 +89,10 @@ select is(
     'complete_onboarding:authenticated',
     'complete_staff_verification:authenticated',
     'create_custom_role:authenticated',
+    'create_general_qr:authenticated',
     'create_restaurant:authenticated',
+    'create_table:authenticated',
+    'delete_my_diner_data:authenticated',
     'get_invitation_preview:anon',
     'get_invitation_preview:authenticated',
     'get_my_context:authenticated',
@@ -96,6 +101,8 @@ select is(
     'get_public_pricing:anon',
     'get_public_pricing:authenticated',
     'invite_staff:authenticated',
+    'list_templates:anon',
+    'list_templates:authenticated',
     'logout_all_devices:authenticated',
     'mark_translation_reviewed:authenticated',
     'my_permissions:authenticated',
@@ -117,14 +124,21 @@ select is(
     'platform_set_restaurant_override:authenticated',
     'platform_set_setting:authenticated',
     'platform_set_staff_active:authenticated',
+    'platform_upsert_template:authenticated',
     'platform_void_invoice:authenticated',
+    'preview_site:authenticated',
+    'public_site:anon',
+    'public_site:authenticated',
     'record_auth_event:authenticated',
+    'regenerate_table_qr:authenticated',
     'register_trusted_device:authenticated',
     'remove_custom_domain:authenticated',
     'resend_staff_invitation:authenticated',
     'reset_staff_pin:authenticated',
     'resolve_host:anon',
     'resolve_host:authenticated',
+    'resolve_qr:anon',
+    'resolve_qr:authenticated',
     'resolve_restaurant_slug:anon',
     'resolve_restaurant_slug:authenticated',
     'restaurant_billing_overview:authenticated',
@@ -132,14 +146,18 @@ select is(
     'restaurant_entitlements:authenticated',
     'restaurant_setup_status:authenticated',
     'revoke_device:authenticated',
+    'revoke_general_qr:authenticated',
     'set_branch_hours:authenticated',
     'set_my_pin:authenticated',
     'set_primary_domain:authenticated',
     'set_restaurant_languages:authenticated',
     'set_security_settings:authenticated',
     'set_staff_status:authenticated',
+    'set_table_active:authenticated',
     'start_menu_import:authenticated',
     'start_translation:authenticated',
+    'track_event:anon',
+    'track_event:authenticated',
     'unlock_ai_job:authenticated',
     'upgrade_plan:authenticated'
   ],
@@ -154,7 +172,8 @@ select ok(
   and not has_function_privilege('authenticated', 'public.park_device_session(text, uuid, text)', 'execute')
   and not has_function_privilege('authenticated', 'public.complete_menu_import(uuid, jsonb)', 'execute')
   and not has_function_privilege('authenticated', 'public.complete_translation(uuid, jsonb)', 'execute')
-  and not has_function_privilege('authenticated', 'public.set_domain_status(uuid, public.domain_status, jsonb, text)', 'execute'),
+  and not has_function_privilege('authenticated', 'public.set_domain_status(uuid, public.domain_status, jsonb, text)', 'execute')
+  and not has_function_privilege('anon', 'public.preview_site(uuid, text)', 'execute'),
   'server-only RPCs are not callable by clients'
 );
 
@@ -165,7 +184,7 @@ select is(
     where n.nspname = 'private' and has_function_privilege('authenticated', p.oid, 'execute')),
   array['can_manage_user', 'can_view_profile', 'has_any_active_membership', 'has_permission', 'has_platform_role',
         'is_active_member', 'is_e164', 'is_i18n_text', 'is_platform_staff', 'path_restaurant_id', 'realtime_topic_allowed',
-        'restaurant_writable'],
+        'restaurant_publicly_available', 'restaurant_writable'],
   'authenticated can execute only the reviewed private helpers (policy/check helpers)'
 );
 

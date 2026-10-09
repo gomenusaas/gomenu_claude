@@ -68,6 +68,8 @@ declare v_count bigint;
 begin
   execute format('select count(*) from %s where %s', p_table, p_where) into v_count;
   return v_count;
+exception when insufficient_privilege then
+  return 0;  -- no table privilege at all: stricter than "RLS returns no rows"
 end $$;
 
 -- Every table in the API-exposed schema.
@@ -148,6 +150,31 @@ begin
   values (r, tests.id(p_branch), 0, '09:00', '23:00');
 end $$;
 
+create function tests.marketing_fixture(p_restaurant text, p_branch text) returns void
+language plpgsql as $$
+declare r uuid := tests.id(p_restaurant);
+begin
+  insert into public.promotions (id, restaurant_id, title, item_id)
+  values (tests.id(p_restaurant || ':promo'), r, '{"en": "Two for one"}', tests.id(p_restaurant || ':item'));
+  insert into public.promotion_branches (promotion_id, branch_id, restaurant_id)
+  values (tests.id(p_restaurant || ':promo'), tests.id(p_branch), r);
+  -- Restaurant B is on Silver (no Frames): a fixture row still has to exist, so skip the plan check.
+  alter table public.frames disable trigger frames_feature;
+  insert into public.frames (id, restaurant_id, kind, media_path, caption)
+  values (tests.id(p_restaurant || ':frame'), r, 'image', r || '/frames/today.webp', '{"en": "Fresh today"}');
+  alter table public.frames enable trigger frames_feature;
+  insert into public.frame_branches (frame_id, branch_id, restaurant_id)
+  values (tests.id(p_restaurant || ':frame'), tests.id(p_branch), r);
+  insert into public.restaurant_tables (id, restaurant_id, branch_id, label)
+  values (tests.id(p_restaurant || ':table'), r, tests.id(p_branch), 'T1');
+  insert into public.qr_codes (id, restaurant_id, kind, token, branch_id, table_id) values
+    (tests.id(p_restaurant || ':qr_table'), r, 'table', replace(tests.id(p_restaurant || ':qr_table')::text, '-', ''),
+     tests.id(p_branch), tests.id(p_restaurant || ':table'));
+  insert into public.qr_codes (id, restaurant_id, kind, token, label) values
+    (tests.id(p_restaurant || ':qr_general'), r, 'general', replace(tests.id(p_restaurant || ':qr_general')::text, '-', ''), 'Poster');
+  insert into public.analytics_events (restaurant_id, event_type, session_id) values (r, 'website_view', 'fixture-session');
+end $$;
+
 -- Two complete tenants, every persona, and at least one row in every public table.
 create function tests.build_fixtures() returns void
 language plpgsql as $$
@@ -164,6 +191,7 @@ begin
   perform tests.create_user('unverified');                     -- no phone at all
   perform tests.create_user('super_admin',  '+96890000031', 'root@gomenu.test');
   perform tests.create_user('support',      '+96890000032');
+  perform tests.create_user('diner',        '+96890000041');   -- a diner: no membership anywhere
 
   -- tenants
   insert into public.restaurants (id, name, slug, created_by) values
@@ -242,6 +270,19 @@ begin
   values (tests.id('restaurant_b'), 'menu_import', 'needs_review', 0);
   insert into public.user_devices (user_id, token_hash, trusted_at)
   values (tests.id('owner_b'), private.hash_token('device-token-owner-b-0123456789abcdef0123'), now());
+
+  -- Phase 4: promotions, Frames, tables, QR codes, events, a diner's favorite, a template purchase
+  perform tests.marketing_fixture('restaurant_a', 'a1');
+  perform tests.marketing_fixture('restaurant_b', 'b1');
+  insert into public.diner_favorites (user_id, restaurant_id, item_id)
+  values (tests.id('diner'), tests.id('restaurant_b'), tests.id('restaurant_b:item'));
+  insert into public.billing_invoices (id, number, restaurant_id, kind, status, plan_id, currency, lines,
+                                       plan_amount_minor, branch_unit_amount_minor, subtotal_minor, tax_label,
+                                       tax_rate_bp, tax_minor, total_minor, issued_at, due_at)
+  values (tests.id('invoice_b_template'), 'GM-TEST-B-2', tests.id('restaurant_b'), 'template', 'open', null, 'USD', '[]',
+          0, 0, 4900, 'VAT', 0, 0, 4900, now(), now() + interval '14 days');
+  insert into public.template_purchases (restaurant_id, template_key, price_minor, currency, invoice_id)
+  values (tests.id('restaurant_b'), 'elegant', 4900, 'USD', tests.id('invoice_b_template'));
 
   -- storage objects in both tenants and both buckets
   insert into storage.objects (bucket_id, name) values

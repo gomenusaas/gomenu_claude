@@ -75,6 +75,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"analytics_events": {
+                  Row: {
+                    "branch_id": string | null,"created_at": string,"entity_id": string | null,"event_type": Database["public"]['Enums']["analytics_event_type"],"id": number,"is_internal": boolean,"locale": string | null,"qr_code_id": string | null,"restaurant_id": string,"session_id": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id"?: string | null,"created_at"?: string,"entity_id"?: string | null,"event_type": Database["public"]['Enums']["analytics_event_type"],"id"?: number,"is_internal"?: boolean,"locale"?: string | null,"qr_code_id"?: string | null,"restaurant_id": string,"session_id"?: string | null,"user_id"?: string | null
+                  }
+                  Update: {
+                    "branch_id"?: string | null,"created_at"?: string,"entity_id"?: string | null,"event_type"?: Database["public"]['Enums']["analytics_event_type"],"id"?: number,"is_internal"?: boolean,"locale"?: string | null,"qr_code_id"?: string | null,"restaurant_id"?: string,"session_id"?: string | null,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "analytics_events_qr_code_id_fkey"
+      columns: ["qr_code_id"]
+isOneToOne: false
+      referencedRelation: "qr_codes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "analytics_events_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"audit_events": {
                   Row: {
                     "action": string,"actor_email": string | null,"actor_membership_id": string | null,"actor_name": string | null,"actor_phone_e164": string | null,"actor_role_key": string | null,"actor_user_id": string | null,"after": Json | null,"before": Json | null,"branch_id": string | null,"device_id": string | null,"id": string,"ip_address": string | null,"metadata": NonNullable<Json>,"object_id": string | null,"object_type": string,"occurred_at": string,"restaurant_id": string | null,"user_agent": string | null
@@ -233,6 +259,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"diner_favorites": {
+                  Row: {
+                    "created_at": string,"id": string,"item_id": string | null,"restaurant_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"item_id"?: string | null,"restaurant_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"item_id"?: string | null,"restaurant_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "diner_favorites_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "diner_favorites_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"features": {
                   Row: {
                     "category": string,"description": string | null,"key": string,"kind": Database["public"]['Enums']["feature_kind"],"name": string,"sort": number
@@ -246,6 +298,64 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"frame_branches": {
+                  Row: {
+                    "branch_id": string,"frame_id": string,"restaurant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"frame_id": string,"restaurant_id": string
+                  }
+                  Update: {
+                    "branch_id"?: string,"frame_id"?: string,"restaurant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "frame_branches_branch_id_restaurant_id_fkey"
+      columns: ["branch_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "frame_branches_frame_id_restaurant_id_fkey"
+      columns: ["frame_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "frames"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"frames": {
+                  Row: {
+                    "archived_at": string | null,"caption": NonNullable<Json>,"created_at": string,"created_by": string | null,"expires_at": string,"i18n_meta": NonNullable<Json>,"id": string,"item_id": string | null,"kind": Database["public"]['Enums']["media_kind"],"media_path": string,"poster_path": string | null,"promotion_id": string | null,"published_at": string,"restaurant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"caption"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"expires_at": string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"item_id"?: string | null,"kind": Database["public"]['Enums']["media_kind"],"media_path": string,"poster_path"?: string | null,"promotion_id"?: string | null,"published_at"?: string,"restaurant_id": string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"caption"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"expires_at"?: string,"i18n_meta"?: NonNullable<Json>,"id"?: string,"item_id"?: string | null,"kind"?: Database["public"]['Enums']["media_kind"],"media_path"?: string,"poster_path"?: string | null,"promotion_id"?: string | null,"published_at"?: string,"restaurant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "frames_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "frames_promotion_id_restaurant_id_fkey"
+      columns: ["promotion_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "promotions"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "frames_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"gallery_media": {
                   Row: {
@@ -589,17 +699,101 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"email": string | null,"full_name": string | null,"id": string,"locale": string,"phone_e164": string | null,"updated_at": string
+                    "analytics_opt_out": boolean,"created_at": string,"email": string | null,"full_name": string | null,"id": string,"locale": string,"marketing_opt_in": boolean,"phone_e164": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id": string,"locale"?: string,"phone_e164"?: string | null,"updated_at"?: string
+                    "analytics_opt_out"?: boolean,"created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id": string,"locale"?: string,"marketing_opt_in"?: boolean,"phone_e164"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"locale"?: string,"phone_e164"?: string | null,"updated_at"?: string
+                    "analytics_opt_out"?: boolean,"created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"locale"?: string,"marketing_opt_in"?: boolean,"phone_e164"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     
+                  ]
+                },"promotion_branches": {
+                  Row: {
+                    "branch_id": string,"promotion_id": string,"restaurant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"promotion_id": string,"restaurant_id": string
+                  }
+                  Update: {
+                    "branch_id"?: string,"promotion_id"?: string,"restaurant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotion_branches_branch_id_restaurant_id_fkey"
+      columns: ["branch_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "promotion_branches_promotion_id_restaurant_id_fkey"
+      columns: ["promotion_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "promotions"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
+                },"promotions": {
+                  Row: {
+                    "archived_at": string | null,"body": NonNullable<Json>,"created_at": string,"created_by": string | null,"ends_at": string | null,"i18n_meta": NonNullable<Json>,"id": string,"image_path": string | null,"is_active": boolean,"item_id": string | null,"kind": Database["public"]['Enums']["promotion_kind"],"restaurant_id": string,"sort": number,"starts_at": string,"title": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"body"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"ends_at"?: string | null,"i18n_meta"?: NonNullable<Json>,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"item_id"?: string | null,"kind"?: Database["public"]['Enums']["promotion_kind"],"restaurant_id": string,"sort"?: number,"starts_at"?: string,"title": NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"body"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"ends_at"?: string | null,"i18n_meta"?: NonNullable<Json>,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"item_id"?: string | null,"kind"?: Database["public"]['Enums']["promotion_kind"],"restaurant_id"?: string,"sort"?: number,"starts_at"?: string,"title"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotions_item_id_restaurant_id_fkey"
+      columns: ["item_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "menu_items"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "promotions_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"qr_codes": {
+                  Row: {
+                    "branch_id": string | null,"created_at": string,"created_by": string | null,"id": string,"is_active": boolean,"kind": Database["public"]['Enums']["qr_kind"],"label": string | null,"restaurant_id": string,"revoked_at": string | null,"table_id": string | null,"token": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"is_active"?: boolean,"kind": Database["public"]['Enums']["qr_kind"],"label"?: string | null,"restaurant_id": string,"revoked_at"?: string | null,"table_id"?: string | null,"token": string
+                  }
+                  Update: {
+                    "branch_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"is_active"?: boolean,"kind"?: Database["public"]['Enums']["qr_kind"],"label"?: string | null,"restaurant_id"?: string,"revoked_at"?: string | null,"table_id"?: string | null,"token"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "qr_codes_branch_id_restaurant_id_fkey"
+      columns: ["branch_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","restaurant_id"]
+    },{
+      foreignKeyName: "qr_codes_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "qr_codes_table_id_restaurant_id_fkey"
+      columns: ["table_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurant_tables"
+      referencedColumns: ["id","restaurant_id"]
+    }
                   ]
                 },"reserved_slugs": {
                   Row: {
@@ -739,6 +933,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"restaurant_tables": {
+                  Row: {
+                    "archived_at": string | null,"branch_id": string,"created_at": string,"created_by": string | null,"id": string,"is_active": boolean,"label": string,"restaurant_id": string,"section": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"branch_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"is_active"?: boolean,"label": string,"restaurant_id": string,"section"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"branch_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"is_active"?: boolean,"label"?: string,"restaurant_id"?: string,"section"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "restaurant_tables_branch_id_restaurant_id_fkey"
+      columns: ["branch_id","restaurant_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","restaurant_id"]
+    }
+                  ]
                 },"restaurants": {
                   Row: {
                     "archived_at": string | null,"contact_email": string | null,"contact_phone_e164": string | null,"country_code": string,"cover_path": string | null,"created_at": string,"created_by": string | null,"currency": string,"default_locale": string,"description": NonNullable<Json>,"id": string,"invite_ttl_hours": number,"logo_path": string | null,"name": string,"onboarding_completed_at": string | null,"platform_hold": boolean,"platform_hold_reason": string | null,"slug": string,"social_links": NonNullable<Json>,"staff_auto_lock_minutes": number,"status": Database["public"]['Enums']["restaurant_status"],"status_changed_at": string,"tagline": NonNullable<Json>,"terms_accepted_at": string | null,"terms_accepted_by": string | null,"terms_version": string | null,"timezone": string,"updated_at": string,"whatsapp_e164": string | null
@@ -863,6 +1077,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"template_purchases": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"currency": string,"id": string,"invoice_id": string,"paid_at": string | null,"price_minor": number,"restaurant_id": string,"status": Database["public"]['Enums']["template_purchase_status"],"template_key": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"invoice_id": string,"paid_at"?: string | null,"price_minor": number,"restaurant_id": string,"status"?: Database["public"]['Enums']["template_purchase_status"],"template_key": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"invoice_id"?: string,"paid_at"?: string | null,"price_minor"?: number,"restaurant_id"?: string,"status"?: Database["public"]['Enums']["template_purchase_status"],"template_key"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "template_purchases_invoice_id_fkey"
+      columns: ["invoice_id"]
+isOneToOne: true
+      referencedRelation: "billing_invoices"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "template_purchases_restaurant_id_fkey"
+      columns: ["restaurant_id"]
+isOneToOne: false
+      referencedRelation: "restaurants"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "template_purchases_template_key_fkey"
+      columns: ["template_key"]
+isOneToOne: false
+      referencedRelation: "website_templates"
+      referencedColumns: ["key"]
+    }
+                  ]
                 },"trial_grants": {
                   Row: {
                     "granted_at": string,"granted_by": string | null,"id": string,"phone_e164": string,"reason": string | null,"restaurant_id": string,"source": Database["public"]['Enums']["trial_source"],"user_id": string | null
@@ -915,7 +1161,27 @@ isOneToOne: false
 isOneToOne: true
       referencedRelation: "restaurants"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "website_settings_template_fk"
+      columns: ["template_key"]
+isOneToOne: false
+      referencedRelation: "website_templates"
+      referencedColumns: ["key"]
     }
+                  ]
+                },"website_templates": {
+                  Row: {
+                    "created_at": string,"currency": string,"description": NonNullable<Json>,"is_active": boolean,"key": string,"name": NonNullable<Json>,"price_minor": number | null,"sort": number,"tier": Database["public"]['Enums']["template_tier"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"currency"?: string,"description"?: NonNullable<Json>,"is_active"?: boolean,"key": string,"name": NonNullable<Json>,"price_minor"?: number | null,"sort"?: number,"tier": Database["public"]['Enums']["template_tier"],"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"currency"?: string,"description"?: NonNullable<Json>,"is_active"?: boolean,"key"?: string,"name"?: NonNullable<Json>,"price_minor"?: number | null,"sort"?: number,"tier"?: Database["public"]['Enums']["template_tier"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 }
           }
@@ -938,6 +1204,9 @@ isOneToOne: true
 "apply_menu_import":
 { Args: { "p_job_id": string,"p_payload": Json }; Returns: number
                            },
+"archive_table":
+{ Args: { "p_table_id": string }; Returns: undefined
+                           },
 "assign_staff_role":
 { Args: { "p_branch_ids"?: (string)[],"p_branch_scope": Database["public"]['Enums']["branch_scope"],"p_membership_id": string,"p_role_id": string }; Returns: undefined
                            },
@@ -949,6 +1218,9 @@ isOneToOne: true
                            },
 "buy_extra_branches":
 { Args: { "p_count": number,"p_restaurant_id": string }; Returns: string
+                           },
+"buy_template":
+{ Args: { "p_restaurant_id": string,"p_template_key": string }; Returns: string
                            },
 "cancel_ai_job":
 { Args: { "p_job_id": string }; Returns: undefined
@@ -980,8 +1252,17 @@ isOneToOne: true
 "create_custom_role":
 { Args: { "p_description"?: string,"p_key": string,"p_name": string,"p_permission_keys": (string)[],"p_restaurant_id": string }; Returns: string
                            },
+"create_general_qr":
+{ Args: { "p_label": string,"p_restaurant_id": string }; Returns: string
+                           },
 "create_restaurant":
 { Args: { "p_accept_terms"?: boolean,"p_branch_name"?: string,"p_name": string,"p_slug": string }; Returns: string
+                           },
+"create_table":
+{ Args: { "p_branch_id": string,"p_label": string,"p_section"?: string }; Returns: string
+                           },
+"delete_my_diner_data":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "dev_list_outbox":
 { Args: { "p_limit"?: number }; Returns: Json[]
@@ -1006,6 +1287,9 @@ isOneToOne: true
                            },
 "list_parked_sessions":
 { Args: { "p_device_token": string }; Returns: Json
+                           },
+"list_templates":
+{ Args: { "p_include_inactive"?: boolean,"p_restaurant_id"?: string }; Returns: Json
                            },
 "logout_all_devices":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -1079,11 +1363,23 @@ isOneToOne: true
 "platform_set_staff_active":
 { Args: { "p_active": boolean,"p_user_id": string }; Returns: undefined
                            },
+"platform_upsert_template":
+{ Args: { "p_description": Json,"p_is_active": boolean,"p_key": string,"p_name": Json,"p_price_minor": number,"p_sort": number,"p_tier": Database["public"]['Enums']["template_tier"] }; Returns: undefined
+                           },
 "platform_void_invoice":
 { Args: { "p_invoice_id": string,"p_reason": string }; Returns: undefined
                            },
+"preview_site":
+{ Args: { "p_restaurant_id": string,"p_template"?: string }; Returns: Json
+                           },
+"public_site":
+{ Args: { "p_restaurant_id": string }; Returns: Json
+                           },
 "record_auth_event":
 { Args: { "p_action": string }; Returns: undefined
+                           },
+"regenerate_table_qr":
+{ Args: { "p_table_id": string }; Returns: undefined
                            },
 "register_trusted_device":
 { Args: { "p_device_token": string,"p_label"?: string,"p_user_agent"?: string }; Returns: string
@@ -1099,6 +1395,9 @@ isOneToOne: true
                            },
 "resolve_host":
 { Args: { "p_hostname": string }; Returns: Json
+                           },
+"resolve_qr":
+{ Args: { "p_session_id"?: string,"p_token": string }; Returns: Json
                            },
 "resolve_restaurant_slug":
 { Args: { "p_slug": string }; Returns: Json
@@ -1117,6 +1416,9 @@ isOneToOne: true
                            },
 "revoke_device":
 { Args: { "p_device_id": string }; Returns: undefined
+                           },
+"revoke_general_qr":
+{ Args: { "p_qr_id": string }; Returns: undefined
                            },
 "set_branch_hours":
 { Args: { "p_branch_id": string,"p_hours": Json }; Returns: undefined
@@ -1139,11 +1441,17 @@ isOneToOne: true
 "set_staff_status":
 { Args: { "p_membership_id": string,"p_reason": string,"p_status": Database["public"]['Enums']["membership_status"] }; Returns: undefined
                            },
+"set_table_active":
+{ Args: { "p_active": boolean,"p_table_id": string }; Returns: undefined
+                           },
 "start_menu_import":
 { Args: { "p_restaurant_id": string,"p_source_path": string }; Returns: string
                            },
 "start_translation":
 { Args: { "p_restaurant_id": string,"p_scope": Json,"p_target_locale": string }; Returns: Json
+                           },
+"track_event":
+{ Args: { "p_branch_id"?: string,"p_entity_id"?: string,"p_event_type": Database["public"]['Enums']["analytics_event_type"],"p_locale"?: string,"p_qr_code_id"?: string,"p_restaurant_id": string,"p_session_id"?: string }; Returns: undefined
                            },
 "unlock_ai_job":
 { Args: { "p_job_id": string }; Returns: undefined
@@ -1153,7 +1461,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "ai_credit_reason": "free_grant"|"purchase"|"import"|"translation"|"refund"|"adjustment","ai_job_kind": "menu_import"|"translation","ai_job_status": "processing"|"needs_credits"|"needs_review"|"completed"|"failed"|"cancelled","allergen": "gluten"|"crustaceans"|"eggs"|"fish"|"peanuts"|"soybeans"|"milk"|"tree_nuts"|"celery"|"mustard"|"sesame"|"sulphites"|"lupin"|"molluscs","branch_scope": "all"|"selected","branch_status_override": "auto"|"open"|"closed","dietary_tag": "vegetarian"|"vegan"|"halal"|"gluten_free"|"dairy_free"|"nut_free"|"healthy"|"new"|"popular"|"chef_special","domain_status": "not_connected"|"dns_required"|"verifying"|"connected"|"ssl_pending"|"active"|"error"|"disconnected","feature_kind": "flag"|"limit","invitation_status": "pending"|"opened"|"consumed"|"expired"|"cancelled"|"replaced","invoice_kind": "new_period"|"upgrade"|"extra_branches"|"ai_credits","invoice_status": "open"|"paid"|"void","media_kind": "image"|"video","membership_status": "invitation_sent"|"verification_pending"|"new_staff"|"active"|"expired"|"cancelled"|"locked"|"disabled"|"removed","menu_display_style": "list"|"grid"|"compact","payment_method": "bank_transfer"|"cash"|"card_offline"|"processor","period_kind": "trial"|"paid","permission_effect": "grant"|"deny","platform_role": "super_admin"|"admin"|"support"|"finance"|"content"|"discovery","price_item": "plan"|"extra_branch"|"ai_credits_pack","restaurant_status": "trial"|"active"|"past_due"|"grace"|"suspended"|"retention"|"expiring"|"deleted","trial_source": "automatic"|"platform_exception"
+            "ai_credit_reason": "free_grant"|"purchase"|"import"|"translation"|"refund"|"adjustment","ai_job_kind": "menu_import"|"translation","ai_job_status": "processing"|"needs_credits"|"needs_review"|"completed"|"failed"|"cancelled","allergen": "gluten"|"crustaceans"|"eggs"|"fish"|"peanuts"|"soybeans"|"milk"|"tree_nuts"|"celery"|"mustard"|"sesame"|"sulphites"|"lupin"|"molluscs","analytics_event_type": "website_view"|"menu_view"|"item_view"|"frame_view"|"frame_complete"|"frame_click"|"promotion_view"|"promotion_click"|"qr_scan"|"go_click"|"share_click","branch_scope": "all"|"selected","branch_status_override": "auto"|"open"|"closed","dietary_tag": "vegetarian"|"vegan"|"halal"|"gluten_free"|"dairy_free"|"nut_free"|"healthy"|"new"|"popular"|"chef_special","domain_status": "not_connected"|"dns_required"|"verifying"|"connected"|"ssl_pending"|"active"|"error"|"disconnected","feature_kind": "flag"|"limit","invitation_status": "pending"|"opened"|"consumed"|"expired"|"cancelled"|"replaced","invoice_kind": "new_period"|"upgrade"|"extra_branches"|"ai_credits"|"template","invoice_status": "open"|"paid"|"void","media_kind": "image"|"video","membership_status": "invitation_sent"|"verification_pending"|"new_staff"|"active"|"expired"|"cancelled"|"locked"|"disabled"|"removed","menu_display_style": "list"|"grid"|"compact","payment_method": "bank_transfer"|"cash"|"card_offline"|"processor","period_kind": "trial"|"paid","permission_effect": "grant"|"deny","platform_role": "super_admin"|"admin"|"support"|"finance"|"content"|"discovery","price_item": "plan"|"extra_branch"|"ai_credits_pack","promotion_kind": "card"|"banner"|"carousel","qr_kind": "general"|"table","restaurant_status": "trial"|"active"|"past_due"|"grace"|"suspended"|"retention"|"expiring"|"deleted","template_purchase_status": "pending"|"paid"|"void","template_tier": "free"|"gold"|"paid","trial_source": "automatic"|"platform_exception"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1273,7 +1581,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "ai_credit_reason": ["free_grant", "purchase", "import", "translation", "refund", "adjustment"],"ai_job_kind": ["menu_import", "translation"],"ai_job_status": ["processing", "needs_credits", "needs_review", "completed", "failed", "cancelled"],"allergen": ["gluten", "crustaceans", "eggs", "fish", "peanuts", "soybeans", "milk", "tree_nuts", "celery", "mustard", "sesame", "sulphites", "lupin", "molluscs"],"branch_scope": ["all", "selected"],"branch_status_override": ["auto", "open", "closed"],"dietary_tag": ["vegetarian", "vegan", "halal", "gluten_free", "dairy_free", "nut_free", "healthy", "new", "popular", "chef_special"],"domain_status": ["not_connected", "dns_required", "verifying", "connected", "ssl_pending", "active", "error", "disconnected"],"feature_kind": ["flag", "limit"],"invitation_status": ["pending", "opened", "consumed", "expired", "cancelled", "replaced"],"invoice_kind": ["new_period", "upgrade", "extra_branches", "ai_credits"],"invoice_status": ["open", "paid", "void"],"media_kind": ["image", "video"],"membership_status": ["invitation_sent", "verification_pending", "new_staff", "active", "expired", "cancelled", "locked", "disabled", "removed"],"menu_display_style": ["list", "grid", "compact"],"payment_method": ["bank_transfer", "cash", "card_offline", "processor"],"period_kind": ["trial", "paid"],"permission_effect": ["grant", "deny"],"platform_role": ["super_admin", "admin", "support", "finance", "content", "discovery"],"price_item": ["plan", "extra_branch", "ai_credits_pack"],"restaurant_status": ["trial", "active", "past_due", "grace", "suspended", "retention", "expiring", "deleted"],"trial_source": ["automatic", "platform_exception"]
+            "ai_credit_reason": ["free_grant", "purchase", "import", "translation", "refund", "adjustment"],"ai_job_kind": ["menu_import", "translation"],"ai_job_status": ["processing", "needs_credits", "needs_review", "completed", "failed", "cancelled"],"allergen": ["gluten", "crustaceans", "eggs", "fish", "peanuts", "soybeans", "milk", "tree_nuts", "celery", "mustard", "sesame", "sulphites", "lupin", "molluscs"],"analytics_event_type": ["website_view", "menu_view", "item_view", "frame_view", "frame_complete", "frame_click", "promotion_view", "promotion_click", "qr_scan", "go_click", "share_click"],"branch_scope": ["all", "selected"],"branch_status_override": ["auto", "open", "closed"],"dietary_tag": ["vegetarian", "vegan", "halal", "gluten_free", "dairy_free", "nut_free", "healthy", "new", "popular", "chef_special"],"domain_status": ["not_connected", "dns_required", "verifying", "connected", "ssl_pending", "active", "error", "disconnected"],"feature_kind": ["flag", "limit"],"invitation_status": ["pending", "opened", "consumed", "expired", "cancelled", "replaced"],"invoice_kind": ["new_period", "upgrade", "extra_branches", "ai_credits", "template"],"invoice_status": ["open", "paid", "void"],"media_kind": ["image", "video"],"membership_status": ["invitation_sent", "verification_pending", "new_staff", "active", "expired", "cancelled", "locked", "disabled", "removed"],"menu_display_style": ["list", "grid", "compact"],"payment_method": ["bank_transfer", "cash", "card_offline", "processor"],"period_kind": ["trial", "paid"],"permission_effect": ["grant", "deny"],"platform_role": ["super_admin", "admin", "support", "finance", "content", "discovery"],"price_item": ["plan", "extra_branch", "ai_credits_pack"],"promotion_kind": ["card", "banner", "carousel"],"qr_kind": ["general", "table"],"restaurant_status": ["trial", "active", "past_due", "grace", "suspended", "retention", "expiring", "deleted"],"template_purchase_status": ["pending", "paid", "void"],"template_tier": ["free", "gold", "paid"],"trial_source": ["automatic", "platform_exception"]
           }
         }
 } as const
