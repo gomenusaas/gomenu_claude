@@ -109,7 +109,7 @@ export function OrderTracker({ publicKey, order, locale, s, menuHref, signedIn }
           {steps.map((step) => (
             <li key={step} className={`flex items-center gap-3 ${reached(step) ? "" : "opacity-40"}`}
                 data-testid="order-step" data-reached={reached(step)}>
-              <span aria-hidden className={`grid size-6 place-items-center rounded-full text-xs ${reached(step) ? "bg-[var(--gm-accent,#16a34a)] text-white" : "border"}`}>
+              <span aria-hidden className={`grid size-6 place-items-center rounded-full text-xs ${reached(step) ? "bg-success text-success-foreground" : "border"}`}>
                 {reached(step) ? "✓" : ""}
               </span>
               <span>{t.steps[step]}</span>

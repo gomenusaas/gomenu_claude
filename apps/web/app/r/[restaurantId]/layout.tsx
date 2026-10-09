@@ -41,6 +41,8 @@ export default async function RestaurantLayout({
   const tone = ["suspended", "retention", "expiring"].includes(status) ? "danger" : status === "trial" ? "info" : "warning";
   const nav = [
     { href: `/r/${restaurantId}`, label: t.dashboard.overview, show: true },
+    { href: `/r/${restaurantId}/orders`, label: t.orders.nav, show: can("orders.view") },
+    { href: `/r/${restaurantId}/kitchen`, label: t.kitchen.nav, show: can("kitchen.access") },
     { href: `/r/${restaurantId}/menu`, label: t.menu.nav, show: can("menu.view") },
     { href: `/r/${restaurantId}/branches`, label: t.branches.nav, show: true },
     { href: `/r/${restaurantId}/staff`, label: t.dashboard.staff, show: can("staff.view") },
@@ -49,6 +51,8 @@ export default async function RestaurantLayout({
     { href: `/r/${restaurantId}/frames`, label: t.frames.nav, show: can("frames.manage") },
     { href: `/r/${restaurantId}/qr`, label: t.qr.nav, show: can("qr.manage") },
     { href: `/r/${restaurantId}/website`, label: t.website.nav, show: can("website.manage") },
+    { href: `/r/${restaurantId}/ordering`, label: t.ordering.nav, show: can("settings.manage") },
+    { href: `/r/${restaurantId}/payments`, label: t.payments.nav, show: can("payments.manage") },
     { href: `/r/${restaurantId}/settings`, label: t.settings.nav, show: can("settings.manage") || can("website.manage") },
     { href: `/r/${restaurantId}/setup`, label: t.setup.setupNav, show: can("settings.manage") },
     { href: `/r/${restaurantId}/billing`, label: t.billing.nav, show: can("billing.manage") },

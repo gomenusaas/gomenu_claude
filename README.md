@@ -4,7 +4,13 @@ Multi-tenant SaaS for restaurants: website, QR menu, ordering, staff operations,
 loyalty and reporting. The business rules live in [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md), which
 is the source of truth.
 
-**Status: Phase 4 (Customer experience) complete.** Phase 5 does not start until it is confirmed.
+**Status: Phase 5 (Operations) complete.** Phase 6 does not start until it is confirmed.
+
+Phase 5 added ordering end to end: cart and checkout on the website, table-QR, car and
+pickup orders, waiter confirmation, waiter shifts and assignment, waiter-created orders, the
+kitchen display, live order tracking for diners, payment timing, online payment through
+gateway adapters (a built-in test gateway for now), cash and card at the restaurant, refunds,
+VAT per restaurant, and the platform's gateway catalogue (see [Phase 5](#phase-5-operations)).
 
 Phase 4 added the public mobile website with 9 templates, menu display styles, item pages,
 the GO button, sharing, offers (promotions), Frames, general and table QR codes, and the diner
@@ -90,7 +96,7 @@ Demo logins from the seed:
 ## Tests
 
 ```bash
-pnpm test:db            # pgTAP: 1,774 assertions on RLS, isolation, onboarding, audit, billing, lifecycle, menu, AI, domains, website, QR
+pnpm test:db            # pgTAP: 2,185 assertions on RLS, isolation, onboarding, audit, billing, lifecycle, menu, AI, domains, website, QR, orders, payments
 pnpm test:integration   # Vitest against Auth / PostgREST / Storage / Realtime
 pnpm build && PW_CHROMIUM_PATH=... pnpm test:e2e   # Playwright, mobile viewport
 ```
@@ -291,7 +297,8 @@ is not set. Statuses are recorded through the service-role-only `set_domain_stat
 can run more often). Requests must carry `Authorization: Bearer $CRON_SECRET`.
 
 ### Phase 3 settings to add on Vercel
-`GOMENU_SESSION_KEY` (`openssl rand -base64 32`), `ANTHROPIC_API_KEY`, `VERCEL_TOKEN`
+`GOMENU_SESSION_KEY` (`openssl rand -base64 32`), and since Phase 5 `GOMENU_PAYMENTS_KEY`
+(another `openssl rand -base64 32`, different from the session key), `ANTHROPIC_API_KEY`, `VERCEL_TOKEN`
 (scoped to the team), `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `CRON_SECRET`. Mark all of them
 as sensitive. Leave `GOMENU_AI_PROVIDER` unset in hosted environments.
 
@@ -344,11 +351,66 @@ as sensitive. Leave `GOMENU_AI_PROVIDER` unset in hosted environments.
 - Images are lazy-loaded; videos never preload and show a poster.
 
 ### Custom domains in production
-`proxy.ts` serves `/` and `/item/*` on any host that isn't the app's own (`NEXT_PUBLIC_APP_URL`,
+`proxy.ts` serves `/`, `/item/*`, `/checkout` and `/order/*` on any host that isn't the app's own (`NEXT_PUBLIC_APP_URL`,
 `*.vercel.app`, or the comma-separated `GOMENU_APP_HOSTS`) from the restaurant that owns the
 domain, and redirects other domains of that restaurant to its main address. Other paths
 (sign-in, `/me`, `/q/...`) work on any host. Domain lookups are cached for 60 seconds per
 server instance.
+
+## Phase 5: Operations
+
+### What's included
+- **One order engine** (spec §10) for every source (website, general QR, table QR, waiter) and
+  service (table, car, pickup). The browser sends only what was chosen; `place_order` prices
+  everything from the *current* menu (branch availability, sizes, required options) and keeps
+  snapshots, so later menu changes never rewrite an order. Order status and payment status are
+  separate fields. Every step is written to an append-only timeline with who did it.
+- **Diners:** "Add to order" on every dish (size, options, quantity, note), a cart kept in the
+  browser, checkout (at my table — only after scanning the table's QR code; to my car — plate
+  required; pickup — choose the branch), VAT shown, and a tracking page that updates live:
+  Placed → Waiting for confirmation → Confirmed → Preparing → Ready → Served → Completed. Guests
+  can cancel until the restaurant confirms. Signed-in diners find their orders in `/me`.
+- **Waiter confirmation** (default on): table-QR orders wait for a waiter. Unconfirmed orders
+  never reach the kitchen — enforced by the database, not the screen. Reject reasons: not at
+  table, invalid QR, duplicate, customer cancelled, other.
+- **Assignment modes:** open to waiters on shift, first to accept wins atomically (default);
+  by table; manager assigns; no confirmation. Waiters start and end shifts per branch. Managers
+  assign, reassign, unassign, take over and cancel (reason required); history is kept.
+- **Waiter orders** for a table or a car; the creator is responsible. Edits before the kitchen
+  starts are normal; after it starts they are audited before/after and the kitchen gets an
+  alert to acknowledge.
+- **Kitchen display** (`/r/{id}/kitchen`, tablet layout): New → Preparing → Ready, oldest first,
+  timers, a delay warning after the restaurant's limit (default 15 min), a sound for new and
+  changed tickets. A ticket appears only when the order is confirmed **and** either paid or
+  paying after (the release rule).
+- **Payment timing** per service (defaults: table after, car before, pickup before). When
+  confirmation is required, online payment opens only after confirmation.
+- **Payments** (spec §11): each restaurant connects its own merchant account (owners, fresh
+  mobile code); credentials are encrypted with `GOMENU_PAYMENTS_KEY` and never readable by
+  clients. **An online payment succeeds only when the gateway's signed webhook arrives**
+  (`/api/payments/webhook/{gateway}`); events are recorded once (replays are ignored) and the
+  amount and currency must match. The browser redirect changes nothing. Cash and card at the
+  restaurant are recorded by the responsible waiter or a manager. Full and partial refunds
+  (owners, fresh mobile code) update payment, order and timeline, and are audited.
+- **Built-in test gateway** (decision P5: the launch gateway is decided later): a stand-in
+  hosted payment page at `/pay/test/{payment}` that approves or declines and then sends a
+  signed webhook exactly as a provider would. A real provider is a new adapter in
+  `apps/web/lib/payments/`.
+- **Platform → Payment gateways:** country, currency, sandbox/production, methods, status
+  (Draft, Testing, Active, Disabled, Retired) and **private commercial terms** that restaurants
+  never see. Restaurants see only gateways eligible for their country, currency, plan and
+  status (Testing ones only where the `testing_gateways_visible` setting is on — dev/demo).
+- **VAT per restaurant** (decision P5): 5%, included in menu prices by default; editable in
+  Ordering settings.
+- **Live updates:** staff screens listen on private per-branch channels (membership checked by
+  the database; New Staff excluded); diners on a channel named after their order's
+  unguessable key. Broadcasts carry ids and statuses only; screens re-read through RLS.
+
+### Try it locally
+Demo restaurant **Muscat Grill** takes orders. Scan `/q/demo-muscat-grill-table-t1`, add a
+dish, place the order; sign in as the waiter (`+96899000003`, code from `/dev/outbox`), start
+the shift, accept and confirm; the kitchen (`+96899000004`) starts and finishes it. For an
+online payment, order Pickup and press *Pay now*.
 
 ## Design system
 
@@ -420,9 +482,29 @@ Nothing here has been deployed yet. To bring the dev environment up:
 | P3-Q4 | Custom domains through the Vercel Domains API |
 | P3-Q5 | PIN unlock is bound to a trusted device |
 | P3-Q6 | Recommended defaults, applied without further questions: re-authentication = a mobile code within 10 minutes; EN+AR enabled on the platform and restaurants activate their own; images compressed to WebP in the browser; videos ≤ 15 MB; Claude and Vercel behind provider interfaces with deterministic stand-ins for tests |
+| P5-Q1 | Launch gateway decided later: the full payment engine ships with a built-in test gateway and cash/card at the restaurant; a real gateway plugs in as an adapter |
+| P5-Q2 | VAT per restaurant, default 5%, included in menu prices |
+| P5-Q3 | Default assignment: open to waiters on shift, first to accept wins |
+| P5-Q4 | All of Phase 5 delivered at once |
 | P4 (defaults, applied without further questions as instructed) | Paid templates: one-time price set per template by Platform (seed: $49), bought by invoice and unlocked on payment. QR: general + table codes and table management now; table *ordering* in Phase 5. Diner account: profile, language, favorites, privacy controls now; past/saved orders in Phases 5–6. Analytics events recorded now; reports in Phase 7. Templates use the placeholder design tokens |
 
 ## Known limitations and follow-ups
+
+**Phase 5**
+- **No real payment gateway yet** (P5-Q1). Only the test gateway exists; it is visible to
+  restaurants only where the platform setting `testing_gateways_visible` is on (the seed turns
+  it on for dev). Connecting a real provider needs its adapter, its webhook format and a
+  sandbox account.
+- **Opening hours decide ordering.** A branch without hours counts as closed, so it takes no
+  orders until hours are set (or it is set open manually in Branches).
+- **The cart lives in the browser** (per restaurant). Prices in the cart are indicative; the
+  order is always priced again by the database, and the checkout says so.
+- **Kitchen sound** needs one tap on "Turn on sound" per screen (browser rule).
+- **Paying twice** (an abandoned online attempt that completes after a cash payment) is
+  recorded and flagged on the timeline as "Paid twice — refund one payment"; refunding is
+  manual.
+- **Loyalty, incentives, reorder and saved orders** arrive in Phase 6; reports on orders,
+  sales and refunds in Phase 7.
 
 **Phase 4**
 - **The 9 templates use the placeholder design tokens.** Layouts are genuinely different; the

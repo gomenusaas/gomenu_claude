@@ -125,3 +125,23 @@ export async function upsertTemplate(_: FormState, fd: FormData) {
     p_sort: Number(s(fd, "sort")) || 0,
   }, "/platform/templates", "Template saved.");
 }
+
+const list = (v: string) => v.split(",").map((x) => x.trim()).filter(Boolean);
+
+export async function upsertGateway(_: FormState, fd: FormData) {
+  return call("platform_upsert_gateway", {
+    p_key: s(fd, "key"), p_name: s(fd, "name"), p_provider: s(fd, "provider"), p_environment: s(fd, "environment"),
+    p_countries: list(s(fd, "countries").toUpperCase()), p_currencies: list(s(fd, "currencies").toUpperCase()),
+    p_methods: list(s(fd, "methods").toLowerCase()), p_status: s(fd, "status"), p_sort: Number(s(fd, "sort")) || 0,
+  }, "/platform/gateways");
+}
+
+export async function setGatewayTerms(_: FormState, fd: FormData): Promise<FormState> {
+  const feeBp = Math.round(Number(s(fd, "fee_percent")) * 100);
+  const fixed = Math.round(Number(s(fd, "fixed_fee")) * 1000);
+  if (!Number.isFinite(feeBp) || !Number.isFinite(fixed)) return { error: "Enter numbers." };
+  return call("platform_set_gateway_terms", {
+    p_gateway_key: s(fd, "key"),
+    p_terms: { fee_bp: feeBp, fixed_fee_minor: fixed, currency: s(fd, "currency") || null, notes: s(fd, "notes") || null },
+  }, "/platform/gateways");
+}

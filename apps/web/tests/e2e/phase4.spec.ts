@@ -88,6 +88,8 @@ test.describe.serial("Phase 4: customer experience", () => {
     const phone = `+9689${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`;
     await page.goto(DEMO);
     await page.getByTestId("site-item").filter({ hasText: "Mixed grill" }).getByRole("link").click();
+    // The restaurant page has its own favorite button: be on the dish before pressing it.
+    await expect(page.getByTestId("item-name")).toHaveText("Mixed grill");
     await page.getByTestId("favorite-button").click();
     await page.waitForURL(/\/me\/login/);
     await otp(page, phone);

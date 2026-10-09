@@ -1481,6 +1481,9 @@ isOneToOne: false
 "branch_open_status":
 { Args: { "p_restaurant_id": string }; Returns: Json
                            },
+"branch_order_staff":
+{ Args: { "p_branch_id": string }; Returns: Json
+                           },
 "buy_ai_credits":
 { Args: { "p_packs": number,"p_restaurant_id": string }; Returns: string
                            },
@@ -1786,6 +1789,9 @@ isOneToOne: false
                            },
 "set_table_active":
 { Args: { "p_active": boolean,"p_table_id": string }; Returns: undefined
+                           },
+"set_table_waiter":
+{ Args: { "p_table_id": string,"p_waiter_id": string }; Returns: undefined
                            },
 "start_menu_import":
 { Args: { "p_restaurant_id": string,"p_source_path": string }; Returns: string
