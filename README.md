@@ -4,7 +4,11 @@ Multi-tenant SaaS for restaurants: website, QR menu, ordering, staff operations,
 loyalty and reporting. The business rules live in [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md), which
 is the source of truth.
 
-**Status: Phase 3 (Restaurant core) complete.** Phase 4 does not start until it is confirmed.
+**Status: Phase 4 (Customer experience) complete.** Phase 5 does not start until it is confirmed.
+
+Phase 4 added the public mobile website with 9 templates, menu display styles, item pages,
+the GO button, sharing, offers (promotions), Frames, general and table QR codes, and the diner
+account (see [Phase 4](#phase-4-customer-experience)).
 
 Phase 3 added shared-device security (PIN lock and staff switcher, trusted devices,
 re-authentication), staff management, restaurant settings, branches and opening hours,
@@ -77,6 +81,8 @@ Demo logins from the seed:
 | Owner, Sohar Café (Demo), on a paid Silver plan | `owner2@demo.gomenu.test` / `GoMenuDemo!2026` |
 | Manager / Waiter (Qurum only) / Kitchen | `+96899000002` / `+96899000003` / `+96899000004` + OTP |
 | New Staff awaiting a role | `+96899000005` + OTP → lands on the pending screen |
+| Visitor / diner | http://localhost:3000/demo-muscat-grill (any mobile number signs in as a diner) |
+| Table QR (Qurum, T1–T3) | http://localhost:3000/q/demo-muscat-grill-table-t1 (fixed demo tokens) |
 
 > Behind a registry that blocks `public.ecr.aws`, start the stack with
 > `SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io pnpm db:start`.
@@ -84,7 +90,7 @@ Demo logins from the seed:
 ## Tests
 
 ```bash
-pnpm test:db            # pgTAP: 1,410 assertions on RLS, isolation, onboarding, audit, billing, lifecycle, menu, AI, domains
+pnpm test:db            # pgTAP: 1,774 assertions on RLS, isolation, onboarding, audit, billing, lifecycle, menu, AI, domains, website, QR
 pnpm test:integration   # Vitest against Auth / PostgREST / Storage / Realtime
 pnpm build && PW_CHROMIUM_PATH=... pnpm test:e2e   # Playwright, mobile viewport
 ```
@@ -253,7 +259,7 @@ add other staff from Platform Admin → Staff.
   records payment). Platform Admin can adjust credits, and the adjustment is audited.
 - **Website settings:** web address (old addresses keep redirecting), menu style, sections,
   ordering/payment toggles (saved now; ordering arrives in Phase 5), SEO text, published flag.
-  The public website itself is Phase 4.
+  The public website came in Phase 4.
 - **Custom domains (Gold):** add a domain → the DNS records to create → automatic checks
   (when the page is viewed, at most once a minute, and by a daily cron) → *Active* → *Main
   address*. A domain can belong to one restaurant only.
@@ -288,6 +294,61 @@ can run more often). Requests must carry `Authorization: Bearer $CRON_SECRET`.
 `GOMENU_SESSION_KEY` (`openssl rand -base64 32`), `ANTHROPIC_API_KEY`, `VERCEL_TOKEN`
 (scoped to the team), `VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, `CRON_SECRET`. Mark all of them
 as sensitive. Leave `GOMENU_AI_PROVIDER` unset in hosted environments.
+
+## Phase 4: Customer experience
+
+### What's included
+- **Public website** at `/{slug}` (old slugs redirect permanently) and on custom domains.
+  Mobile-first; shows identity, offers, Frames, the menu, gallery, branches with hours and
+  live open/closed status, contact, WhatsApp and social links. Language switcher across the
+  restaurant's active languages, with right-to-left layout for Arabic. A branch picker applies
+  branch availability and branch-targeted offers and Frames. Only the restaurant's *reviewed*
+  translations are shown; unreviewed AI drafts fall back to the default language.
+- **9 templates** (spec §7), genuinely different layouts on the same data:
+  free — Classic, Minimal, Cards; Gold — Showcase, Bold, Street; paid one-time — Elegant,
+  Magazine, Café. Templates are database records Platform manages (add, price, activate). Paid
+  ones are bought with an invoice and unlock when Finance records the payment. If a plan no
+  longer includes the chosen template, the website falls back to Classic without changing the
+  saved choice. **Menu display styles** (list, grid, compact) are a separate setting.
+- **Preview** (`/preview/{restaurant}`): staff with website management see the website before
+  publishing, in any template, with their own content.
+- **GO button** in every template: one branch opens maps; several branches ask which one.
+  **Sharing**: native share sheet or WhatsApp, for the restaurant and for each dish.
+  Every dish has its own page with photos, video, variants, options and allergens.
+- **Offers (promotions, Gold)**: card, banner or carousel; dates in the restaurant's time zone;
+  branch targeting; dish link; image; views and clicks counted.
+- **Frames (Gold)**: story-style photos and short videos with caption, dish link and branch
+  targeting. The server sets the publishing time and expires them exactly 24 hours later.
+  Views, watched-to-the-end and clicks are counted.
+- **QR codes** (spec §9): every code encodes `/q/{random token}` on GoMenu, never a slug, domain
+  or table number, so nothing is reprinted after an address change. General codes (posters,
+  social) and table codes per branch; download PNG/SVG; printable sheet; regenerate (the old
+  code stops working at once), deactivate, delete. A table scan stores the table context for
+  the visit (shown to the diner now, used for ordering in Phase 5). It establishes context,
+  not physical presence.
+- **Diner account** (spec §12): sign in with mobile + code from any restaurant page and come
+  back to the same page. `/me` shows favorites (restaurants and dishes), name, preferred
+  language, privacy controls (don't link my visits to my account; offers opt-in) and "delete my
+  favorites and preferences". Restaurants cannot read diners' favorites.
+- **Analytics events** (spec §14) are recorded from now on through one validated,
+  rate-limited function: website, menu and item views, QR scans, GO clicks, shares, Frame and
+  offer views/clicks. Staff and platform activity is flagged internal and excluded. No personal
+  data unless the diner is signed in and hasn't opted out. Reports arrive in Phase 7.
+
+### How the public website stays safe and fast
+- Visitors never get table access: everything comes from `public_site()`, which returns only a
+  published website of a publicly available restaurant. Suspended restaurants show "temporarily
+  unavailable" and nothing else.
+- Responses are cached and tagged per restaurant; any save in the dashboard refreshes them at
+  once, and anything else (a Frame expiring, a branch opening) shows within 30 seconds.
+- Images are lazy-loaded; videos never preload and show a poster.
+
+### Custom domains in production
+`proxy.ts` serves `/` and `/item/*` on any host that isn't the app's own (`NEXT_PUBLIC_APP_URL`,
+`*.vercel.app`, or the comma-separated `GOMENU_APP_HOSTS`) from the restaurant that owns the
+domain, and redirects other domains of that restaurant to its main address. Other paths
+(sign-in, `/me`, `/q/...`) work on any host. Domain lookups are cached for 60 seconds per
+server instance.
 
 ## Design system
 
@@ -359,8 +420,24 @@ Nothing here has been deployed yet. To bring the dev environment up:
 | P3-Q4 | Custom domains through the Vercel Domains API |
 | P3-Q5 | PIN unlock is bound to a trusted device |
 | P3-Q6 | Recommended defaults, applied without further questions: re-authentication = a mobile code within 10 minutes; EN+AR enabled on the platform and restaurants activate their own; images compressed to WebP in the browser; videos ≤ 15 MB; Claude and Vercel behind provider interfaces with deterministic stand-ins for tests |
+| P4 (defaults, applied without further questions as instructed) | Paid templates: one-time price set per template by Platform (seed: $49), bought by invoice and unlocked on payment. QR: general + table codes and table management now; table *ordering* in Phase 5. Diner account: profile, language, favorites, privacy controls now; past/saved orders in Phases 5–6. Analytics events recorded now; reports in Phase 7. Templates use the placeholder design tokens |
 
 ## Known limitations and follow-ups
+
+**Phase 4**
+- **The 9 templates use the placeholder design tokens.** Layouts are genuinely different; the
+  visual styling will be redone from the Claude Design export.
+- **A template added in Platform without a matching layout** in the app renders as Classic
+  (the platform page flags it "No layout yet"). New layouts are code.
+- **Diner data and Discovery:** favorites, preferences and visit history belong to one
+  universal identity, ready for Discovery; there is no diner account deletion yet (the same
+  identity may be staff, and order history arrives in Phase 5). "Delete my favorites and
+  preferences" covers what exists today. This needs the retention policy already noted.
+- **Offers and Frames analytics** show raw counts; the attributed-orders part of the spec
+  arrives with ordering and reports.
+- **QR scans are counted per scan**, not per unique visitor; scans by staff are excluded.
+- **Locally**, run `pnpm db:reset` (it also clears Next's data cache) rather than
+  `supabase db reset`, or the website may show cached data from before the reset.
 
 **Phase 3**
 - **One opening period per day** in the hours editor (the database accepts several; the UI
@@ -377,7 +454,6 @@ Nothing here has been deployed yet. To bring the dev environment up:
   them out (they can sign in with a mobile code to make the device trusted).
 - **Re-authentication on hosted environments:** GoTrue allows one code per number every 60 s,
   so someone who logs in and immediately opens a sensitive form may be asked to wait a minute.
-- The public website, templates and QR menu that use these settings are Phase 4.
 
 **Phase 2**
 - **Who on the platform can see restaurants (my reading of Q11).** A restaurant's billing
