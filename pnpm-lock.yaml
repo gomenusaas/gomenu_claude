@@ -15,7 +15,7 @@ importers:
   apps/web:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.132.1
+        specifier: 0.132.1
         version: 0.132.1(zod@4.6.5)
       '@gomenu/ui':
         specifier: workspace:*
