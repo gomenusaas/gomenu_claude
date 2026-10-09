@@ -69,8 +69,11 @@ test.describe.serial("Phase 5: ordering, waiters, kitchen, payments", () => {
   test("table QR order: waiter confirms, kitchen prepares, waiter serves and takes cash, diner follows live", async ({ page, browser }) => {
     // Diner at table T1.
     await page.goto("/q/demo-muscat-grill-table-t1");
-    await addToOrder(page, MIXED_GRILL, "Garlic sauce");
+    await page.goto(`/demo-muscat-grill/item/${MIXED_GRILL}`);
+    await expect(page.getByTestId("add-to-cart")).toBeVisible();
+    // Full-page screenshots on an emulated phone can shift fixed elements, so shoot before adding.
     await shot(page, "p5-01-add-to-order");
+    await addToOrder(page, MIXED_GRILL, "Garlic sauce");
     await page.getByTestId("cart-bar").click();
     await expect(page.getByTestId("checkout-line")).toHaveCount(1);
     await expect(page.getByLabel(/At my table/)).toBeChecked();

@@ -202,9 +202,9 @@ export function CartBar({ restaurantId, href, label, itemsLabel, oneItemLabel, c
   const cart = useCart(restaurantId);
   if (!cart.count) return null;
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 p-3">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 p-3">
       <Link href={href} data-testid="cart-bar"
-            className="gm-go mx-auto flex max-w-xl items-center justify-between gap-3 shadow-lg">
+            className="gm-go pointer-events-auto mx-auto flex max-w-xl items-center justify-between gap-3 shadow-lg">
         <span>{label} · {cart.count === 1 ? oneItemLabel : fmt(itemsLabel, { n: cart.count })}</span>
         <span>{money(cart.subtotal, currency, locale)}</span>
       </Link>
