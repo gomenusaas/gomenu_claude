@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { dbError, type FormState } from "@/components/form-state";
 import type { Database } from "@/lib/database.types";
 import { getDomainProvider } from "@/lib/domains/provider";
@@ -27,7 +27,7 @@ export async function saveWebsite(_: FormState, fd: FormData): Promise<FormState
   }).eq("restaurant_id", restaurantId).select("restaurant_id");
   if (error) return dbError(error, t.security.reauthPrompt);
   if (!data?.length) return { error: t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -37,7 +37,7 @@ export async function changeSlug(_: FormState, fd: FormData): Promise<FormState>
   const supabase = await createClient();
   const { error } = await supabase.rpc("change_restaurant_slug", { p_restaurant_id: restaurantId, p_new_slug: s(fd, "slug") });
   if (error) return error.code === "23505" ? { error: t.onboarding.slugTaken } : dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -49,7 +49,7 @@ export async function addDomain(_: FormState, fd: FormData): Promise<FormState> 
   if (error) return error.code === "23514" && /hostname/.test(error.message) ? { error: t.website.hostnameInvalid } : dbError(error, t.security.reauthPrompt);
   const { data: domain } = await supabase.from("restaurant_domains").select("id, hostname").eq("id", id).single();
   if (domain) await syncDomain(domain, "add");
-  revalidatePath(`/r/${restaurantId}/website`);
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -61,7 +61,7 @@ export async function checkDomain(_: FormState, fd: FormData): Promise<FormState
   const { data: domain } = await supabase.from("restaurant_domains").select("id, hostname").eq("id", s(fd, "id")).maybeSingle();
   if (!domain) return { error: t.common.unexpectedError };
   await syncDomain(domain);
-  revalidatePath(`/r/${restaurantId}/website`);
+  refreshRestaurant(restaurantId);
   return undefined;
 }
 
@@ -76,7 +76,7 @@ export async function removeDomain(_: FormState, fd: FormData): Promise<FormStat
   } catch (e) {
     console.error("domain removal at provider failed", hostname, e);
   }
-  revalidatePath(`/r/${restaurantId}/website`);
+  refreshRestaurant(restaurantId);
   return undefined;
 }
 
@@ -86,6 +86,6 @@ export async function makePrimaryDomain(_: FormState, fd: FormData): Promise<For
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_primary_domain", { p_domain_id: s(fd, "id") });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}/website`);
+  refreshRestaurant(restaurantId);
   return undefined;
 }

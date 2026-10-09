@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/components/form-state";
 import { getDictionary } from "@/lib/i18n";
@@ -23,7 +23,7 @@ export async function saveDetails(_: FormState, formData: FormData): Promise<For
     .eq("id", restaurantId)
     .select("id");
   if (error || !data?.length) return { error: error?.message ?? t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -43,7 +43,7 @@ export async function saveBranch(_: FormState, formData: FormData): Promise<Form
     .eq("id", String(formData.get("branch_id")))
     .select("id");
   if (error || !data?.length) return { error: error?.message ?? t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}/setup`);
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 

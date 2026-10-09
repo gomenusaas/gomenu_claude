@@ -206,8 +206,18 @@ select is(tests.try_dml(format($s$insert into public.diner_favorites (user_id, r
 select is(tests.try_sql(format($s$insert into public.diner_favorites (user_id, restaurant_id) values (%L, %L)$s$,
                                tests.id('outsider'), tests.id('restaurant_a'))), '42501',
           'nobody can add favorites for someone else');
+select is(jsonb_array_length(public.my_favorites()), 2, 'the diner''s favorites list shows names from published websites');
+reset role;
+update public.website_settings set is_published = false where restaurant_id = tests.id('restaurant_a');
+select tests.authenticate_as('diner');
+select is(jsonb_array_length(public.my_favorites()), 1, 'favorites of unpublished websites are not listed');
+reset role;
+update public.website_settings set is_published = true where restaurant_id = tests.id('restaurant_a');
+select tests.authenticate_as('diner');
+select is(jsonb_array_length(public.my_favorites()), 2, 'the diner''s favorites list shows names from published websites');
 select tests.authenticate_as('owner_b');
 select is(tests.count_rows('public.diner_favorites'), 0::bigint, 'restaurants cannot read diners'' favorites');
+select is(jsonb_array_length(public.my_favorites()), 0, 'my_favorites only ever returns the caller''s own');
 select tests.authenticate_as('diner');
 select public.delete_my_diner_data();
 select is(tests.count_rows('public.diner_favorites'), 0::bigint, 'diners delete their own data');

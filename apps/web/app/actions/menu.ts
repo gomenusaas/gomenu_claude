@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { redirect } from "next/navigation";
 import { dbError, type FormState } from "@/components/form-state";
 import type { Database } from "@/lib/database.types";
@@ -30,7 +30,7 @@ async function currencyOf(supabase: Awaited<ReturnType<typeof createClient>>, re
 }
 
 function done(restaurantId: string, ok: string): FormState {
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok };
 }
 
@@ -113,7 +113,7 @@ export async function createItem(_: FormState, fd: FormData): Promise<FormState>
     price_minor: price, sort: (last?.sort ?? 0) + 10,
   }).select("id").single();
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   redirect(`/r/${restaurantId}/menu/items/${data.id}`);
 }
 
@@ -250,7 +250,7 @@ export async function addItemMedia(restaurantId: string, itemId: string, m: Uplo
     await supabase.storage.from("restaurant-public").remove([m.path, ...(m.posterPath ? [m.posterPath] : [])]);
     return dbError(error, t.security.reauthPrompt);
   }
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return undefined;
 }
 

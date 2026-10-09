@@ -105,6 +105,7 @@ select is(
     'list_templates:authenticated',
     'logout_all_devices:authenticated',
     'mark_translation_reviewed:authenticated',
+    'my_favorites:authenticated',
     'my_permissions:authenticated',
     'my_pin_is_set:authenticated',
     'platform_add_staff:authenticated',

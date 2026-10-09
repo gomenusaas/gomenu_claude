@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { redirect } from "next/navigation";
 import { dbError, type FormState } from "@/components/form-state";
 import { AiError, getAiProvider, type MenuFile, toImportPayload, TranslationSet } from "@/lib/ai/provider";
@@ -47,7 +47,7 @@ export async function runMenuImport(restaurantId: string, path: string, mediaTyp
   } catch (e) {
     await admin.rpc("fail_ai_job", { p_job_id: jobId, p_error: aiMessage(e, t) });
   }
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { jobId };
 }
 
@@ -70,7 +70,7 @@ export async function publishImport(_: FormState, fd: FormData): Promise<FormSta
   }
   const { error } = await supabase.rpc("apply_menu_import", { p_job_id: s(fd, "job_id"), p_payload: { categories } });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   redirect(`/r/${restaurantId}/menu`);
 }
 
@@ -79,7 +79,7 @@ export async function unlockJob(_: FormState, fd: FormData): Promise<FormState> 
   const supabase = await createClient();
   const { error } = await supabase.rpc("unlock_ai_job", { p_job_id: s(fd, "job_id") });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${s(fd, "restaurant_id")}`, "layout");
+  refreshRestaurant(s(fd, "restaurant_id"));
   return { ok: t.common.saved };
 }
 
@@ -88,7 +88,7 @@ export async function cancelJob(_: FormState, fd: FormData): Promise<FormState> 
   const supabase = await createClient();
   const { error } = await supabase.rpc("cancel_ai_job", { p_job_id: s(fd, "job_id") });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${s(fd, "restaurant_id")}`, "layout");
+  refreshRestaurant(s(fd, "restaurant_id"));
   redirect(`/r/${s(fd, "restaurant_id")}/menu/import`);
 }
 
@@ -112,13 +112,13 @@ export async function runTranslation(_: FormState, fd: FormData): Promise<FormSt
     const translated = await provider.translate(source, { from: job.source_locale, to: job.target_locale, restaurantName: r?.name ?? "" });
     const { data: status, error: doneError } = await admin.rpc("complete_translation", { p_job_id: job.job_id, p_translated: translated });
     if (doneError) throw doneError;
-    revalidatePath(`/r/${restaurantId}`, "layout");
+    refreshRestaurant(restaurantId);
     return status === "needs_credits" ? { error: fmt(t.ai.needsCredits, { n: job.item_count }) }
       : { ok: fmt(t.ai.translated, { n: job.item_count }) };
   } catch (e) {
     const message = aiMessage(e, t);
     await admin.rpc("fail_ai_job", { p_job_id: job.job_id, p_error: message });
-    revalidatePath(`/r/${restaurantId}`, "layout");
+    refreshRestaurant(restaurantId);
     return { error: message };
   }
 }
@@ -142,6 +142,6 @@ export async function buyCredits(_: FormState, fd: FormData): Promise<FormState>
   const supabase = await createClient();
   const { error } = await supabase.rpc("buy_ai_credits", { p_restaurant_id: restaurantId, p_packs: Number(s(fd, "packs")) || 1 });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.ai.invoiceIssued };
 }

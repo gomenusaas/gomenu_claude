@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { dbError, type FormState } from "@/components/form-state";
 import { getDictionary } from "@/lib/i18n";
 import { i18nFromForm as i18n } from "@/lib/i18n/text";
@@ -29,7 +29,7 @@ export async function saveProfile(_: FormState, fd: FormData): Promise<FormState
     invite_ttl_hours: Number(s(fd, "invite_ttl_hours")) || 48,
   }).eq("id", id).select("id");
   if (error || !data?.length) return { error: error?.message ?? t.common.unexpectedError };
-  revalidatePath(`/r/${id}`, "layout");
+  refreshRestaurant(id);
   return { ok: t.common.saved };
 }
 
@@ -46,7 +46,7 @@ export async function saveLanguages(_: FormState, fd: FormData): Promise<FormSta
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_restaurant_languages", { p_restaurant_id: id, p_locales: fd.getAll("locales").map(String) });
   if (error) return { error: error.message };
-  revalidatePath(`/r/${id}`, "layout");
+  refreshRestaurant(id);
   return { ok: t.common.saved };
 }
 
@@ -58,6 +58,6 @@ export async function saveSecurity(_: FormState, fd: FormData): Promise<FormStat
     p_restaurant_id: id, p_auto_lock_minutes: Number(s(fd, "auto_lock")) || 5,
   });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${id}`, "layout");
+  refreshRestaurant(id);
   return { ok: t.common.saved };
 }

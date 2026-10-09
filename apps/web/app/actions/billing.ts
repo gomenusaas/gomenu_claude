@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import type { FormState } from "@/components/form-state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,7 +15,7 @@ export async function choosePlan(_: FormState, formData: FormData): Promise<Form
     p_extra_branches: Number(formData.get("extra_branches") ?? 0) || 0,
   });
   if (error) return { error: error.message };
-  revalidatePath(`/r/${restaurantId}/billing`);
+  refreshRestaurant(restaurantId);
   return { ok: "ok" };
 }
 
@@ -27,7 +27,7 @@ export async function buyExtraBranches(_: FormState, formData: FormData): Promis
     p_count: Number(formData.get("count") ?? 1) || 1,
   });
   if (error) return { error: error.message };
-  revalidatePath(`/r/${restaurantId}/billing`);
+  refreshRestaurant(restaurantId);
   return { ok: "ok" };
 }
 
@@ -36,6 +36,6 @@ export async function upgradePlan(_: FormState, formData: FormData): Promise<For
   const supabase = await createClient();
   const { error } = await supabase.rpc("upgrade_plan", { p_restaurant_id: restaurantId, p_plan_key: "gold" });
   if (error) return { error: error.message };
-  revalidatePath(`/r/${restaurantId}/billing`);
+  refreshRestaurant(restaurantId);
   return { ok: "ok" };
 }

@@ -1,0 +1,75 @@
+/*
+ * Public website. Templates restyle shared parts by overriding the design tokens on their
+ * wrapper (Tailwind utilities read the --gm-* variables), plus a few template-specific rules.
+ * Placeholder visual design until the Claude Design export arrives.
+ */
+.gm-site {
+  background: var(--gm-color-background);
+  color: var(--gm-color-foreground);
+  font-family: var(--gm-site-font, var(--gm-font-sans));
+  min-height: 100dvh;
+}
+.gm-site[lang="ar"], .gm-site[lang="fa"], .gm-site[lang="ur"] { --gm-site-font: var(--gm-font-arabic); }
+.gm-site .gm-h2 { font-family: var(--gm-site-heading, inherit); font-size: 1.25rem; font-weight: 700; }
+.gm-site .gm-chip {
+  display: inline-flex; align-items: center; gap: .25rem; border: 1px solid var(--gm-color-border);
+  border-radius: var(--gm-radius-full); padding: .35rem .8rem; font-size: .875rem; background: var(--gm-color-card);
+}
+.gm-site .gm-card { background: var(--gm-color-card); border: 1px solid var(--gm-color-border); border-radius: var(--gm-radius-lg); }
+.gm-site .gm-tag { font-size: .7rem; border-radius: var(--gm-radius-full); padding: .05rem .5rem; background: var(--gm-color-muted); }
+.gm-site .gm-badge { font-size: .75rem; font-weight: 600; border-radius: var(--gm-radius-full); padding: .15rem .6rem; }
+.gm-site .gm-badge-open { background: color-mix(in srgb, var(--gm-color-success) 18%, transparent); color: var(--gm-color-success); }
+.gm-site .gm-badge-closed { background: var(--gm-color-muted); color: var(--gm-color-muted-foreground); }
+.gm-site .gm-go {
+  min-width: 6rem; border-radius: var(--gm-radius-full); padding: .7rem 1.6rem; font-weight: 800; letter-spacing: .08em;
+  background: var(--gm-color-accent); color: var(--gm-color-accent-foreground); box-shadow: var(--gm-shadow-md);
+}
+.gm-site .gm-select { border: 1px solid var(--gm-color-border); border-radius: var(--gm-radius-md); padding: .3rem .5rem; background: var(--gm-color-card); }
+.gm-site .gm-placeholder { background: linear-gradient(135deg, var(--gm-color-muted), var(--gm-color-border)); }
+.gm-site .gm-frame-ring { display: block; border-radius: 9999px; padding: 2px; background: conic-gradient(var(--gm-color-accent), #f59e0b, var(--gm-color-accent)); }
+.gm-site .gm-frame-ring img { border: 2px solid var(--gm-color-background); }
+
+/* --- Free ------------------------------------------------------------------------------- */
+.gm-t-classic { --gm-color-accent: #c2410c; --gm-color-accent-foreground: #fff; }
+.gm-t-minimal { --gm-color-accent: #111827; --gm-color-accent-foreground: #fff; --gm-radius-lg: 4px; --gm-radius-full: 4px; }
+.gm-t-minimal .gm-card { border-color: transparent; }
+.gm-t-cards {
+  --gm-color-foreground: #14161a; --gm-color-card-foreground: #14161a; --gm-color-muted-foreground: #5b6170; color-scheme: light; --gm-color-card: #fff; --gm-color-border: #e3e5ea; --gm-color-muted: #eceef1;
+  --gm-color-background: #f4f5f7; --gm-color-accent: #0f766e; --gm-color-accent-foreground: #fff; --gm-radius-lg: 18px; }
+
+/* --- Gold ------------------------------------------------------------------------------- */
+.gm-t-showcase { --gm-color-accent: #e11d48; --gm-color-accent-foreground: #fff; }
+.gm-t-showcase .gm-hero { min-height: 70dvh; }
+.gm-t-bold {
+  --gm-color-background: #0b0b0c; --gm-color-foreground: #f8fafc; --gm-color-card: #17171a; --gm-color-card-foreground: #f8fafc;
+  --gm-color-border: #2b2b31; --gm-color-muted: #222227; --gm-color-muted-foreground: #a1a1aa;
+  --gm-color-accent: #facc15; --gm-color-accent-foreground: #0b0b0c; color-scheme: dark;
+}
+.gm-t-bold .gm-h2 { text-transform: uppercase; letter-spacing: .06em; font-size: 1.6rem; font-weight: 900; }
+.gm-t-street {
+  --gm-color-foreground: #14161a; --gm-color-card-foreground: #14161a; --gm-color-muted-foreground: #5b6170; color-scheme: light; --gm-color-muted: #fde68a;
+  --gm-color-background: #fff7d6; --gm-color-card: #ffffff; --gm-color-border: #111111; --gm-color-accent: #111111;
+  --gm-color-accent-foreground: #ffe14d; --gm-radius-lg: 10px;
+}
+.gm-t-street .gm-card { border-width: 2px; box-shadow: 4px 4px 0 #111; }
+.gm-t-street .gm-h2 { font-size: 1.5rem; font-weight: 900; transform: rotate(-1deg); display: inline-block; background: #ffe14d; padding: 0 .4rem; }
+
+/* --- Paid ------------------------------------------------------------------------------- */
+.gm-t-elegant {
+  --gm-color-foreground: #2b2722; --gm-color-card-foreground: #2b2722; --gm-color-muted-foreground: #5b6170; color-scheme: light; --gm-color-muted: #efe9df;
+  --gm-color-background: #faf8f4; --gm-color-card: #faf8f4; --gm-color-border: #d8cfc0; --gm-color-accent: #3f3a33;
+  --gm-color-accent-foreground: #faf8f4; --gm-site-heading: Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif;
+  --gm-site-font: Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif;
+}
+.gm-t-elegant .gm-h2 { font-weight: 400; font-size: 1.5rem; letter-spacing: .12em; text-transform: uppercase; text-align: center; }
+.gm-t-magazine { --gm-color-accent: #1d4ed8; --gm-color-accent-foreground: #fff; --gm-site-heading: Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif; }
+.gm-t-magazine .gm-h2 { font-size: 1.75rem; font-weight: 700; border-bottom: 3px solid var(--gm-color-foreground); padding-bottom: .25rem; }
+.gm-t-cafe {
+  --gm-color-foreground: #3b2a1a; --gm-color-card-foreground: #3b2a1a; --gm-color-muted-foreground: #5b6170; color-scheme: light;
+  --gm-color-background: #f6efe6; --gm-color-card: #fffaf3; --gm-color-border: #e4d5c3; --gm-color-accent: #8b5e34;
+  --gm-color-accent-foreground: #fffaf3; --gm-color-muted: #efe3d3; --gm-radius-lg: 22px;
+}
+
+/* Controls placed over a dark photo (Showcase hero). */
+.gm-site .gm-on-dark .gm-chip { background: rgb(255 255 255 / .15); color: #fff; border-color: rgb(255 255 255 / .35); }
+.gm-site .gm-on-dark .gm-select { color: #111; }

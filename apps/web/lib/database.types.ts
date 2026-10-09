@@ -1297,6 +1297,9 @@ isOneToOne: false
 "mark_translation_reviewed":
 { Args: { "p_entity": string,"p_id": string,"p_locale": string }; Returns: undefined
                            },
+"my_favorites":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "my_permissions":
 { Args: { "p_restaurant_id": string }; Returns: (string)[]
                            },

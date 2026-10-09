@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { dbError, type FormState } from "@/components/form-state";
 import { zonedLocalToIso } from "@/lib/format";
 import { getDictionary } from "@/lib/i18n";
@@ -30,7 +30,7 @@ export async function addBranch(_: FormState, fd: FormData): Promise<FormState> 
     phone_e164: phone, whatsapp_e164: whatsapp,
   });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -49,7 +49,7 @@ export async function saveBranch(_: FormState, fd: FormData): Promise<FormState>
   }).eq("id", s(fd, "branch_id")).select("id");
   if (error) return dbError(error, t.security.reauthPrompt);
   if (!data?.length) return { error: t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -68,7 +68,7 @@ export async function saveHours(_: FormState, fd: FormData): Promise<FormState> 
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_branch_hours", { p_branch_id: s(fd, "branch_id"), p_hours: hours });
   if (error) return dbError(error, t.security.reauthPrompt);
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -85,7 +85,7 @@ export async function saveOverride(_: FormState, fd: FormData): Promise<FormStat
   }).eq("id", s(fd, "branch_id")).select("id");
   if (error) return dbError(error, t.security.reauthPrompt);
   if (!data?.length) return { error: t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -98,6 +98,6 @@ export async function archiveBranch(_: FormState, fd: FormData): Promise<FormSta
     .eq("id", s(fd, "branch_id")).select("id");
   if (error) return dbError(error, t.security.reauthPrompt);
   if (!data?.length) return { error: t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}`, "layout");
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }

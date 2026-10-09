@@ -20,7 +20,8 @@ export async function sendPhoneOtp(_: FormState, formData: FormData): Promise<Fo
     options: fullName ? { data: { full_name: fullName } } : undefined,
   });
   if (error) return { error: error.status === 429 ? t.login.tooMany : t.common.unexpectedError };
-  redirect(`/verify?phone=${encodeURIComponent(phone)}`);
+  const next = safeNext(String(formData.get("next") ?? ""));
+  redirect(`/verify?phone=${encodeURIComponent(phone)}${next ? `&next=${encodeURIComponent(next)}` : ""}`);
 }
 
 export async function verifyPhoneOtp(_: FormState, formData: FormData): Promise<FormState> {

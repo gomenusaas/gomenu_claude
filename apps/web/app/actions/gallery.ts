@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refreshRestaurant } from "@/lib/site/revalidate";
 import { dbError, type FormState } from "@/components/form-state";
 import { getDictionary } from "@/lib/i18n";
 import { i18nFromForm } from "@/lib/i18n/text";
@@ -21,7 +21,7 @@ export async function addGalleryMedia(restaurantId: string, m: UploadedMedia): P
     await supabase.storage.from("restaurant-public").remove([m.path, ...(m.posterPath ? [m.posterPath] : [])]);
     return dbError(error, t.security.reauthPrompt);
   }
-  revalidatePath(`/r/${restaurantId}/gallery`);
+  refreshRestaurant(restaurantId);
   return undefined;
 }
 
@@ -34,7 +34,7 @@ export async function saveGalleryMedia(_: FormState, fd: FormData): Promise<Form
     .eq("id", s(fd, "id")).select("id");
   if (error) return dbError(error, t.security.reauthPrompt);
   if (!data?.length) return { error: t.common.unexpectedError };
-  revalidatePath(`/r/${restaurantId}/gallery`);
+  refreshRestaurant(restaurantId);
   return { ok: t.common.saved };
 }
 
@@ -46,6 +46,6 @@ export async function removeGalleryMedia(_: FormState, fd: FormData): Promise<Fo
   if (error) return dbError(error, t.security.reauthPrompt);
   const paths = (data ?? []).flatMap((m) => [m.storage_path, m.poster_path].filter(Boolean) as string[]);
   if (paths.length) await supabase.storage.from("restaurant-public").remove(paths);
-  revalidatePath(`/r/${restaurantId}/gallery`);
+  refreshRestaurant(restaurantId);
   return undefined;
 }

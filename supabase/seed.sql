@@ -148,4 +148,30 @@ begin
   insert into public.menu_options (restaurant_id, group_id, name, price_delta_minor, sort) values
     (v_r1, 'd6000000-0000-4000-8000-000000000001', '{"en": "Garlic sauce", "ar": "ثومية"}', 200, 10),
     (v_r1, 'd6000000-0000-4000-8000-000000000001', '{"en": "Extra bread", "ar": "خبز إضافي"}', 300, 20);
+
+  -- Phase 4 demo: published websites, a template each, an offer, tables with QR codes.
+  update public.website_settings set is_published = true, template_key = 'showcase', menu_style = 'list',
+         seo_title = '{"en": "Muscat Grill – grills and mezze in Qurum and Al Mouj", "ar": "مشاوي مسقط – مشاوي ومقبلات في القرم والموج"}'
+   where restaurant_id = v_r1;
+  update public.website_settings set is_published = true, template_key = 'classic', menu_style = 'grid' where restaurant_id = v_r2;
+  update public.restaurants set tagline = '{"en": "Charcoal grills and fresh mezze since 2009", "ar": "مشاوي على الفحم ومقبلات طازجة منذ 2009"}',
+         description = '{"en": "Family recipes from Muscat, grilled to order.", "ar": "وصفات عائلية من مسقط تُشوى عند الطلب."}',
+         contact_phone_e164 = '+96824000001', whatsapp_e164 = '+96899000001',
+         social_links = '{"instagram": "https://instagram.com/muscatgrill.demo"}'
+   where id = v_r1;
+  update public.branches set address = 'Way 2601, Qurum, Muscat', latitude = 23.6139, longitude = 58.4733 where id = v_qurum;
+  update public.branches set address = 'The Walk, Al Mouj, Muscat', latitude = 23.6305, longitude = 58.2766 where id = v_mouj;
+  insert into public.promotions (restaurant_id, kind, title, body, item_id, ends_at) values
+    (v_r1, 'banner', '{"en": "Mixed grill for two – 20% off", "ar": "مشاوي مشكلة لشخصين – خصم 20٪"}',
+     '{"en": "Weekdays, 12–4 pm.", "ar": "أيام الأسبوع من 12 إلى 4 مساءً."}', 'd5000000-0000-4000-8000-000000000003', now() + interval '30 days');
+  insert into public.restaurant_tables (id, restaurant_id, branch_id, label, section) values
+    ('d7000000-0000-4000-8000-000000000001', v_r1, v_qurum, 'T1', 'Indoor'),
+    ('d7000000-0000-4000-8000-000000000002', v_r1, v_qurum, 'T2', 'Indoor'),
+    ('d7000000-0000-4000-8000-000000000003', v_r1, v_qurum, 'T3', 'Terrace');
+  -- Fixed demo tokens so the QR links are easy to try locally: /q/demo-muscat-grill-table-t1 ...
+  insert into public.qr_codes (restaurant_id, kind, token, branch_id, table_id) values
+    (v_r1, 'table', 'demo-muscat-grill-table-t1', v_qurum, 'd7000000-0000-4000-8000-000000000001'),
+    (v_r1, 'table', 'demo-muscat-grill-table-t2', v_qurum, 'd7000000-0000-4000-8000-000000000002'),
+    (v_r1, 'table', 'demo-muscat-grill-table-t3', v_qurum, 'd7000000-0000-4000-8000-000000000003');
+  insert into public.qr_codes (restaurant_id, kind, token, label) values (v_r1, 'general', 'demo-muscat-grill-poster-01', 'Poster');
 end $$;
