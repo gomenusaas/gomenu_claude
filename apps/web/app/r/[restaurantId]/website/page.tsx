@@ -1,12 +1,13 @@
-import { Alert, Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input, Label } from "@gomenu/ui";
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input, Label } from "@gomenu/ui";
 import { notFound } from "next/navigation";
-import { addDomain, changeSlug, checkDomain, makePrimaryDomain, removeDomain, saveWebsite } from "@/app/actions/website";
+import { addDomain, buyTemplate, changeSlug, checkDomain, chooseTemplate, makePrimaryDomain, removeDomain, saveWebsite } from "@/app/actions/website";
 import { ActionForm } from "@/components/action-form";
 import { RowAction } from "@/components/row-action";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/auth/context";
 import type { DnsRecord } from "@/lib/domains/provider";
 import { syncStaleDomains } from "@/lib/domains/sync";
+import { formatMoney } from "@/lib/format";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,15 +17,20 @@ export default async function WebsitePage({ params }: { params: Promise<{ restau
   const { restaurantId } = await params;
   const ctx = await requireUser();
   if (!ctx.active_memberships?.some((m) => m.restaurant_id === restaurantId)) notFound();
-  const { t } = await getDictionary();
+  const { locale, t } = await getDictionary();
   const supabase = await createClient();
-  const [{ data: perms }, { data: r }, { data: w }, { data: langs }, { data: ent }] = await Promise.all([
+  const [{ data: perms }, { data: r }, { data: w }, { data: langs }, { data: ent }, { data: tpl }] = await Promise.all([
     supabase.rpc("my_permissions", { p_restaurant_id: restaurantId }),
     supabase.from("restaurants").select("slug").eq("id", restaurantId).single(),
     supabase.from("website_settings").select("*").eq("restaurant_id", restaurantId).single(),
     supabase.from("restaurant_languages").select("locale, platform_languages(name, dir)").eq("restaurant_id", restaurantId).order("sort"),
     supabase.rpc("restaurant_entitlements", { p_restaurant_id: restaurantId }),
+    supabase.rpc("list_templates", { p_restaurant_id: restaurantId }),
   ]);
+  type Template = { key: string; name: Record<string, string>; description: Record<string, string>; tier: "free" | "gold" | "paid";
+    price_minor: number | null; currency: string; usable: boolean; purchase_status: "pending" | "paid" | null };
+  const templates = (tpl ?? []) as unknown as Template[];
+  const canBuy = (perms ?? []).includes("billing.manage");
   if (!r || !w || !(perms ?? []).includes("website.manage")) notFound();
   const domainsIncluded = (ent as { features?: Record<string, { enabled: boolean }> } | null)?.features?.custom_domain?.enabled ?? false;
 
@@ -48,7 +54,49 @@ export default async function WebsitePage({ params }: { params: Promise<{ restau
   return (
     <div className="grid gap-6">
       <h1 className="text-2xl font-semibold">{t.website.title}</h1>
-      <Alert tone="info">{t.website.previewNote}</Alert>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {w.is_published ? (
+          <a href={`/${r.slug}`} target="_blank" rel="noopener" className="rounded-md border px-3 py-2 text-sm hover:bg-muted" data-testid="view-site">{t.website.viewSite}</a>
+        ) : <span className="text-sm text-muted-foreground">{t.website.notPublished}</span>}
+        <a href={`/preview/${restaurantId}`} target="_blank" rel="noopener" className="rounded-md border px-3 py-2 text-sm hover:bg-muted">{t.website.previewSite}</a>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2" className="text-base">{t.website.templates}</CardTitle>
+          <CardDescription>{t.website.templatesBody}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {templates.map((tp) => {
+              const current = w.template_key === tp.key;
+              return (
+                <li key={tp.key} className={`grid gap-2 rounded-lg border p-3 ${current ? "border-accent ring-1 ring-accent" : ""}`} data-testid={`template-${tp.key}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{tp.name[locale] ?? tp.name.en}</span>
+                    <Badge tone={tp.tier === "free" ? "neutral" : tp.tier === "gold" ? "warning" : "accent"}>
+                      {tp.tier === "free" ? t.website.tierFree : tp.tier === "gold" ? t.website.tierGold : t.website.tierPaid}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{tp.description[locale] ?? tp.description.en}</p>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <a href={`/preview/${restaurantId}?template=${tp.key}`} target="_blank" rel="noopener"
+                       className="rounded-md px-2 py-1 text-sm underline">{t.website.preview}</a>
+                    {current ? <Badge tone="success">{t.website.current}</Badge>
+                      : tp.usable ? <RowAction action={chooseTemplate} fields={{ restaurant_id: restaurantId, template: tp.key }} label={t.website.use} variant="outline" testId="use-template" />
+                      : tp.purchase_status === "pending" ? <Badge tone="warning">{t.website.pendingPayment}</Badge>
+                      : tp.tier === "paid" && canBuy && tp.price_minor != null
+                        ? <RowAction action={buyTemplate} fields={{ restaurant_id: restaurantId, template: tp.key }} variant="outline" testId="buy-template"
+                                     label={fmt(t.website.buy, { price: formatMoney(tp.price_minor, tp.currency, locale) })} />
+                      : tp.tier === "gold" ? <span className="text-xs text-muted-foreground">{t.website.needsGold}</span> : null}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

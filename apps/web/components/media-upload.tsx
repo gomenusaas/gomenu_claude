@@ -29,30 +29,8 @@ export function MediaUpload({ restaurantId, folder, save, allowVideo = true, lab
   async function onFile(file: File) {
     setBusy(true);
     setError(null);
-    const storage = createClient().storage.from("restaurant-public");
-    const base = `${restaurantId}/${folder}/${crypto.randomUUID()}`;
     try {
-      let media: UploadedMedia;
-      if (file.type.startsWith("video/")) {
-        if (file.size > MAX_VIDEO_BYTES) throw new Error(labels.videoTooLarge);
-        const path = `${base}.${file.type === "video/webm" ? "webm" : "mp4"}`;
-        const { error: e1 } = await storage.upload(path, file, { contentType: file.type });
-        if (e1) throw e1;
-        const poster = await videoPoster(file);
-        let posterPath: string | null = null;
-        if (poster) {
-          posterPath = `${base}-poster.webp`;
-          const { error: e2 } = await storage.upload(posterPath, poster, { contentType: "image/webp" });
-          if (e2) posterPath = null;
-        }
-        media = { kind: "video", path, posterPath, width: null, height: null, bytes: file.size };
-      } else {
-        const { blob, width, height } = await compressImage(file);
-        const path = `${base}.webp`;
-        const { error: e1 } = await storage.upload(path, blob, { contentType: "image/webp" });
-        if (e1) throw e1;
-        media = { kind: "image", path, posterPath: null, width, height, bytes: blob.size };
-      }
+      const media = await uploadMedia(restaurantId, folder, file, labels.videoTooLarge);
       const result = await save(media);
       if (result?.error) throw new Error(result.error);
       router.refresh();
@@ -77,4 +55,29 @@ export function MediaUpload({ restaurantId, folder, save, allowVideo = true, lab
       {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
     </div>
   );
+}
+
+/** Compress (photos) or check size (videos, with a poster frame) and upload under {restaurant}/{folder}/. */
+export async function uploadMedia(restaurantId: string, folder: string, file: File, videoTooLarge: string): Promise<UploadedMedia> {
+  const storage = createClient().storage.from("restaurant-public");
+  const base = `${restaurantId}/${folder}/${crypto.randomUUID()}`;
+  if (file.type.startsWith("video/")) {
+    if (file.size > MAX_VIDEO_BYTES) throw new Error(videoTooLarge);
+    const path = `${base}.${file.type === "video/webm" ? "webm" : "mp4"}`;
+    const { error: e1 } = await storage.upload(path, file, { contentType: file.type });
+    if (e1) throw e1;
+    const poster = await videoPoster(file);
+    let posterPath: string | null = null;
+    if (poster) {
+      posterPath = `${base}-poster.webp`;
+      const { error: e2 } = await storage.upload(posterPath, poster, { contentType: "image/webp" });
+      if (e2) posterPath = null;
+    }
+    return { kind: "video", path, posterPath, width: null, height: null, bytes: file.size };
+  }
+  const { blob, width, height } = await compressImage(file);
+  const path = `${base}.webp`;
+  const { error } = await storage.upload(path, blob, { contentType: "image/webp" });
+  if (error) throw error;
+  return { kind: "image", path, posterPath: null, width, height, bytes: blob.size };
 }

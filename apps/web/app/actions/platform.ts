@@ -111,3 +111,17 @@ export async function adjustAiCredits(_: FormState, fd: FormData) {
     p_restaurant_id: s(fd, "restaurant_id"), p_delta: Number(s(fd, "delta")), p_reason: s(fd, "reason"),
   }, "/platform/restaurants", "Credits adjusted.");
 }
+
+/** Add or edit a website template record (spec §7: add, price, activate). Price in USD. */
+export async function upsertTemplate(_: FormState, fd: FormData) {
+  const tier = s(fd, "tier") as "free" | "gold" | "paid";
+  return call("platform_upsert_template", {
+    p_key: s(fd, "key").toLowerCase(),
+    p_name: { en: s(fd, "name_en"), ...(s(fd, "name_ar") ? { ar: s(fd, "name_ar") } : {}) },
+    p_description: { ...(s(fd, "description_en") ? { en: s(fd, "description_en") } : {}), ...(s(fd, "description_ar") ? { ar: s(fd, "description_ar") } : {}) },
+    p_tier: tier,
+    p_price_minor: tier === "paid" ? toMinor(s(fd, "price") || "0") : null,
+    p_is_active: fd.get("is_active") === "on",
+    p_sort: Number(s(fd, "sort")) || 0,
+  }, "/platform/templates", "Template saved.");
+}

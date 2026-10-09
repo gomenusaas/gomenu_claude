@@ -179,7 +179,8 @@ export default async function BillingPage({ params }: { params: Promise<{ restau
             {o.invoices.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2" data-testid="invoice-row">
                 <span className="font-medium" dir="ltr">{i.number}</span>
-                {i.kind === "ai_credits" ? <span className="text-muted-foreground">{t.ai.creditsInvoice}</span> : null}
+                {i.kind === "ai_credits" ? <span className="text-muted-foreground">{t.ai.creditsInvoice}</span>
+                  : i.kind === "template" ? <span className="text-muted-foreground">{t.website.templates}</span> : null}
                 <span className="text-muted-foreground">{formatDate(i.issued_at, locale)}</span>
                 <span>{money(i.total_minor, i.currency)}</span>
                 <Badge tone={i.status === "paid" ? "success" : i.status === "open" ? "warning" : "neutral"}>{b.invoiceStatus[i.status]}</Badge>

@@ -89,3 +89,26 @@ export async function makePrimaryDomain(_: FormState, fd: FormData): Promise<For
   refreshRestaurant(restaurantId);
   return undefined;
 }
+
+export async function chooseTemplate(_: FormState, fd: FormData): Promise<FormState> {
+  const { t } = await getDictionary();
+  const restaurantId = s(fd, "restaurant_id");
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("website_settings").update({ template_key: s(fd, "template") })
+    .eq("restaurant_id", restaurantId).select("restaurant_id");
+  if (error) return dbError(error, t.security.reauthPrompt);
+  if (!data?.length) return { error: t.common.unexpectedError };
+  refreshRestaurant(restaurantId);
+  return { ok: t.common.saved };
+}
+
+/** Paid templates: an invoice now; the template unlocks when the invoice is paid. */
+export async function buyTemplate(_: FormState, fd: FormData): Promise<FormState> {
+  const { t } = await getDictionary();
+  const restaurantId = s(fd, "restaurant_id");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("buy_template", { p_restaurant_id: restaurantId, p_template_key: s(fd, "template") });
+  if (error) return dbError(error, t.security.reauthPrompt);
+  refreshRestaurant(restaurantId);
+  return { ok: t.website.boughtInvoice };
+}
