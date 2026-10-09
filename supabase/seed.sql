@@ -174,4 +174,15 @@ begin
     (v_r1, 'table', 'demo-muscat-grill-table-t2', v_qurum, 'd7000000-0000-4000-8000-000000000002'),
     (v_r1, 'table', 'demo-muscat-grill-table-t3', v_qurum, 'd7000000-0000-4000-8000-000000000003');
   insert into public.qr_codes (restaurant_id, kind, token, label) values (v_r1, 'general', 'demo-muscat-grill-poster-01', 'Poster');
+  -- Phase 5 demo: Muscat Grill takes orders and online payments through the built-in test
+  -- gateway (no real money). The test gateway derives its webhook secret on the server, so the
+  -- stored credential is only a marker here.
+  update public.platform_settings set value = 'true' where key = 'testing_gateways_visible';
+  update public.website_settings set ordering_enabled = true, online_payment_enabled = true where restaurant_id = v_r1;
+  insert into public.payment_connections (id, restaurant_id, gateway_id, status, public_config, connected_by, connected_at)
+  select 'd8000000-0000-4000-8000-000000000001', v_r1, id, 'connected', '{"mode": "test"}',
+         'd1000000-0000-4000-8000-000000000001', now()
+    from public.payment_gateways where key = 'test';
+  insert into private.payment_connection_secrets (connection_id, secret_ciphertext)
+  values ('d8000000-0000-4000-8000-000000000001', 'seed:test-gateway-has-no-stored-secret');
 end $$;

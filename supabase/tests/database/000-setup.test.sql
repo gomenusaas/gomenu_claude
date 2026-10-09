@@ -175,6 +175,40 @@ begin
   insert into public.analytics_events (restaurant_id, event_type, session_id) values (r, 'website_view', 'fixture-session');
 end $$;
 
+-- Phase 5: one paid table order with its lines, timeline, payment, refund and webhook; a shift;
+-- a gateway connection (with encrypted-credential row).
+create function tests.orders_fixture(p_restaurant text, p_branch text, p_waiter text) returns void
+language plpgsql as $$
+declare
+  r uuid := tests.id(p_restaurant);
+  o uuid := tests.id(p_restaurant || ':order');
+  c uuid := tests.id(p_restaurant || ':connection');
+  p uuid := tests.id(p_restaurant || ':payment');
+begin
+  insert into public.restaurant_counters (restaurant_id, last_order_number) values (r, 1);
+  insert into public.orders (id, restaurant_id, branch_id, number, public_key, source, service_type, status, payment_status,
+                             payment_timing, needs_confirmation, table_id, currency, subtotal_minor, vat_rate_bp,
+                             prices_include_vat, vat_minor, total_minor, assigned_waiter_id, confirmed_at,
+                             kitchen_released_at, customer_name, customer_phone)
+  values (o, r, tests.id(p_branch), 1, replace(o::text, '-', ''), 'table_qr', 'table', 'confirmed', 'paid', 'after', true,
+          tests.id(p_restaurant || ':table'), 'OMR', 4500, 500, true, 214, 4500, tests.id(p_waiter), now(), now(),
+          'Fixture Diner', '+96890000099');
+  insert into public.order_items (order_id, restaurant_id, branch_id, item_id, name, unit_price_minor, quantity, line_total_minor)
+  values (o, r, tests.id(p_branch), tests.id(p_restaurant || ':item'), '{"en": "Shuwa"}', 4500, 1, 4500);
+  insert into public.order_events (order_id, restaurant_id, branch_id, type) values (o, r, tests.id(p_branch), 'placed');
+  insert into public.waiter_shifts (restaurant_id, branch_id, user_id) values (r, tests.id(p_branch), tests.id(p_waiter));
+  insert into public.payment_connections (id, restaurant_id, gateway_id, status, public_config, connected_at)
+  values (c, r, (select id from public.payment_gateways where key = 'test'), 'connected', '{"merchant": "fixture"}', now());
+  insert into private.payment_connection_secrets (connection_id, secret_ciphertext) values (c, 'fixture-ciphertext-0123456789');
+  insert into public.payments (id, restaurant_id, branch_id, order_id, connection_id, method, status, amount_minor, currency, succeeded_at)
+  values (p, r, tests.id(p_branch), o, c, 'online', 'succeeded', 4500, 'OMR', now());
+  insert into public.payment_refunds (restaurant_id, branch_id, order_id, payment_id, amount_minor, reason, status)
+  values (r, tests.id(p_branch), o, p, 100, 'fixture refund', 'pending');
+  insert into public.payment_webhook_events (restaurant_id, gateway_id, event_id, type, payload, result)
+  values (r, (select id from public.payment_gateways where key = 'test'), 'evt-fixture-' || p_restaurant, 'payment.succeeded',
+          '{}', 'paid');
+end $$;
+
 -- Two complete tenants, every persona, and at least one row in every public table.
 create function tests.build_fixtures() returns void
 language plpgsql as $$
@@ -283,6 +317,12 @@ begin
           0, 0, 4900, 'VAT', 0, 0, 4900, now(), now() + interval '14 days');
   insert into public.template_purchases (restaurant_id, template_key, price_minor, currency, invoice_id)
   values (tests.id('restaurant_b'), 'elegant', 4900, 'USD', tests.id('invoice_b_template'));
+
+  -- Phase 5: orders, shifts, payments (both tenants)
+  perform tests.orders_fixture('restaurant_a', 'a1', 'waiter_a1');
+  perform tests.orders_fixture('restaurant_b', 'b1', 'waiter_b1');
+  insert into private.gateway_terms (gateway_id, terms)
+  values ((select id from public.payment_gateways where key = 'test'), '{"fee_bp": 250}');
 
   -- storage objects in both tenants and both buckets
   insert into storage.objects (bucket_id, name) values

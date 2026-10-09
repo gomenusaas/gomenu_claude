@@ -45,7 +45,7 @@ select is(
                          and c.column_name = 'restaurant_id')
       and t.tablename not in ('restaurants', 'profiles', 'permissions', 'role_permissions', 'platform_staff',
                               'platform_settings', 'features', 'plans', 'plan_entitlements', 'billing_prices',
-                              'reserved_slugs', 'platform_languages', 'user_devices', 'website_templates')),
+                              'reserved_slugs', 'platform_languages', 'user_devices', 'website_templates', 'payment_gateways')),
   null,
   'every public table carries restaurant_id or is a reviewed global table'
 );
@@ -70,29 +70,41 @@ select is(
       and has_function_privilege(r.rolname, p.oid, 'execute')
       and r.rolname <> 'service_role'),
   array[
+    'accept_order:authenticated',
     'accept_staff_invitation:authenticated',
+    'acknowledge_kitchen_alert:authenticated',
     'add_custom_domain:authenticated',
     'ai_credit_balance:authenticated',
     'ai_credit_pack_info:authenticated',
     'apply_menu_import:authenticated',
     'archive_table:authenticated',
+    'assign_order:authenticated',
     'assign_staff_role:authenticated',
     'branch_open_status:authenticated',
     'buy_ai_credits:authenticated',
     'buy_extra_branches:authenticated',
     'buy_template:authenticated',
     'cancel_ai_job:authenticated',
+    'cancel_my_order:anon',
+    'cancel_my_order:authenticated',
+    'cancel_order:authenticated',
     'cancel_staff_invitation:authenticated',
     'change_restaurant_slug:authenticated',
     'change_staff_phone:authenticated',
     'choose_plan:authenticated',
     'complete_onboarding:authenticated',
+    'complete_order:authenticated',
     'complete_staff_verification:authenticated',
+    'confirm_order:authenticated',
+    'connect_gateway:authenticated',
     'create_custom_role:authenticated',
     'create_general_qr:authenticated',
     'create_restaurant:authenticated',
     'create_table:authenticated',
+    'create_waiter_order:authenticated',
     'delete_my_diner_data:authenticated',
+    'disconnect_gateway:authenticated',
+    'edit_order_items:authenticated',
     'get_invitation_preview:anon',
     'get_invitation_preview:authenticated',
     'get_my_context:authenticated',
@@ -101,17 +113,27 @@ select is(
     'get_public_pricing:anon',
     'get_public_pricing:authenticated',
     'invite_staff:authenticated',
+    'kitchen_update:authenticated',
+    'list_payment_gateways:authenticated',
     'list_templates:anon',
     'list_templates:authenticated',
     'logout_all_devices:authenticated',
+    'mark_served:authenticated',
+    'mark_test_order:authenticated',
     'mark_translation_reviewed:authenticated',
     'my_favorites:authenticated',
+    'my_orders:authenticated',
     'my_permissions:authenticated',
     'my_pin_is_set:authenticated',
+    'payment_checkout:anon',
+    'payment_checkout:authenticated',
+    'place_order:anon',
+    'place_order:authenticated',
     'platform_add_staff:authenticated',
     'platform_adjust_ai_credits:authenticated',
     'platform_get_restaurant_overview:authenticated',
     'platform_grant_trial:authenticated',
+    'platform_list_gateways:authenticated',
     'platform_list_invoices:authenticated',
     'platform_list_restaurants:authenticated',
     'platform_list_staff:authenticated',
@@ -119,21 +141,28 @@ select is(
     'platform_record_payment:authenticated',
     'platform_restaurant_billing:authenticated',
     'platform_set_entitlement:authenticated',
+    'platform_set_gateway_terms:authenticated',
     'platform_set_hold:authenticated',
     'platform_set_language:authenticated',
     'platform_set_price:authenticated',
     'platform_set_restaurant_override:authenticated',
     'platform_set_setting:authenticated',
     'platform_set_staff_active:authenticated',
+    'platform_upsert_gateway:authenticated',
     'platform_upsert_template:authenticated',
     'platform_void_invoice:authenticated',
     'preview_site:authenticated',
+    'public_ordering:anon',
+    'public_ordering:authenticated',
     'public_site:anon',
     'public_site:authenticated',
     'record_auth_event:authenticated',
+    'record_offline_payment:authenticated',
     'regenerate_table_qr:authenticated',
     'register_trusted_device:authenticated',
+    'reject_order:authenticated',
     'remove_custom_domain:authenticated',
+    'request_refund:authenticated',
     'resend_staff_invitation:authenticated',
     'reset_staff_pin:authenticated',
     'resolve_host:anon',
@@ -153,12 +182,15 @@ select is(
     'set_primary_domain:authenticated',
     'set_restaurant_languages:authenticated',
     'set_security_settings:authenticated',
+    'set_shift:authenticated',
     'set_staff_status:authenticated',
     'set_table_active:authenticated',
     'start_menu_import:authenticated',
     'start_translation:authenticated',
     'track_event:anon',
     'track_event:authenticated',
+    'track_order:anon',
+    'track_order:authenticated',
     'unlock_ai_job:authenticated',
     'upgrade_plan:authenticated'
   ],
@@ -174,7 +206,12 @@ select ok(
   and not has_function_privilege('authenticated', 'public.complete_menu_import(uuid, jsonb)', 'execute')
   and not has_function_privilege('authenticated', 'public.complete_translation(uuid, jsonb)', 'execute')
   and not has_function_privilege('authenticated', 'public.set_domain_status(uuid, public.domain_status, jsonb, text)', 'execute')
-  and not has_function_privilege('anon', 'public.preview_site(uuid, text)', 'execute'),
+  and not has_function_privilege('anon', 'public.preview_site(uuid, text)', 'execute')
+  and not has_function_privilege('anon', 'public.start_online_payment(text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.start_online_payment(text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.payment_connection_secret(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.apply_payment_event(text, jsonb)', 'execute')
+  and not has_function_privilege('anon', 'public.apply_payment_event(text, jsonb)', 'execute'),
   'server-only RPCs are not callable by clients'
 );
 
@@ -192,7 +229,9 @@ select is(
 select ok(
   not has_schema_privilege('anon', 'private', 'usage')
   and not has_table_privilege('authenticated', 'private.message_outbox', 'select')
-  and not has_table_privilege('authenticated', 'private.staff_credentials', 'select'),
+  and not has_table_privilege('authenticated', 'private.staff_credentials', 'select')
+  and not has_table_privilege('authenticated', 'private.payment_connection_secrets', 'select')
+  and not has_table_privilege('authenticated', 'private.gateway_terms', 'select'),
   'private schema data is unreachable from clients'
 );
 
@@ -208,7 +247,8 @@ select is(
                        where tg.tgrelid = ('public.' || t.table_name)::regclass and tg.tgname = 'tenant_write_guard')
       and t.table_name not in ('audit_events', 'platform_audit_events', 'restaurant_notifications',
                                'billing_invoices', 'billing_payments', 'subscription_periods', 'trial_grants',
-                               'restaurant_entitlement_overrides', 'ai_credit_ledger')),
+                               'restaurant_entitlement_overrides', 'ai_credit_ledger',
+                               'payment_webhook_events')),
   null,
   'every tenant table has the lifecycle write guard or is a reviewed exception'
 );
