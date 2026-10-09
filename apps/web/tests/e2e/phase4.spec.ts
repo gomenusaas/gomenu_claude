@@ -164,7 +164,9 @@ test.describe.serial("Phase 4: customer experience", () => {
     expect((await page.request.get(`/q/${before[0].token}`, { maxRedirects: 0 })).status()).toBe(307);
     await page.getByTestId("qr-regenerate").click();
     await expect.poll(async () => (await page.request.get(`/q/${before[0].token}`, { maxRedirects: 0 })).status()).toBe(404);
+    await page.reload(); // the page now lists the new code; the old one is revoked
     const png = await page.request.get(await page.getByTestId("qr-download").first().getAttribute("href") as string);
+    expect(png.status()).toBe(200);
     expect(png.headers()["content-type"]).toBe("image/png");
     await shot(page, "p4-07-qr");
 

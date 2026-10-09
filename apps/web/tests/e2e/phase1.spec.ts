@@ -162,6 +162,7 @@ test.describe.serial("Phase 1: owner registers, invites staff; New Staff has zer
 });
 
 async function loginWithOtp(page: Page, phone: string) {
+  await page.waitForTimeout(1500); // GoTrue: one code per number per second locally (60 s hosted)
   const { rows } = await db.query("select now() as now");
   await page.goto("/login");
   await page.getByLabel("Mobile number").fill(phone);

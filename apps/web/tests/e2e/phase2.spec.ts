@@ -144,6 +144,7 @@ test.describe.serial("Phase 2: marketing → trial → plan → platform payment
 });
 
 async function loginOwner(page: Page) {
+  await page.waitForTimeout(1500); // GoTrue: one code per number per second locally (60 s hosted)
   const { rows } = await db.query("select now() as now");
   await page.goto("/login");
   await page.getByLabel("Mobile number").fill(ownerPhone);
