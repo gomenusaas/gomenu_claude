@@ -2,7 +2,9 @@ import "server-only";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { Checkout, type OrderingInfo } from "@/components/site/checkout";
 import { ItemDetail } from "@/components/site/item";
+import { OrderTracker, type TrackedOrder } from "@/components/site/order-tracker";
 import type { SiteProps } from "@/components/site/parts";
 import { SiteRenderer } from "@/components/site/render";
 import { Unavailable } from "@/components/site/unavailable";
@@ -90,6 +92,53 @@ export async function renderSiteItem(restaurantId: string, itemId: string, baseP
   const item = p.view.categories.flatMap((c) => c.items).find((i) => i.id === itemId);
   if (!item) notFound();
   return <ItemDetail p={p} item={item} />;
+}
+
+/** The diner's order: cart lines, service, details, totals. Not indexed. */
+export async function renderCheckout(restaurantId: string, basePath: string, search: Search) {
+  const data = await load(restaurantId, false);
+  if ("unavailable" in data) return <Unavailable name={data.unavailable} locale={search.lang ?? "en"} />;
+  const p = await props(data, basePath, search, false, `${basePath}/checkout`);
+  const supabase = await createClient();
+  const [{ data: info }, { data: auth }] = await Promise.all([
+    supabase.rpc("public_ordering", { p_restaurant_id: restaurantId }),
+    supabase.auth.getUser(),
+  ]);
+  if (!info) notFound();
+  let profile: { name: string; phone: string } | null = null;
+  if (auth.user) {
+    const { data: me } = await supabase.from("profiles").select("full_name, phone_e164").eq("id", auth.user.id).single();
+    profile = { name: me?.full_name ?? "", phone: me?.phone_e164 ?? "" };
+  }
+  const { view } = p;
+  const table = p.ctx.table;
+  return (
+    <div className={`gm-site gm-t-${data.website.template}`} dir={view.dir} lang={view.locale} data-template={data.website.template}>
+      <Checkout restaurantId={restaurantId} info={info as unknown as OrderingInfo} s={p.s} locale={view.locale}
+                defaultLocale={data.restaurant.default_locale}
+                branches={data.branches.map((b) => ({ id: b.id, name: b.name, is_open: b.is_open }))}
+                defaultBranchId={table?.branch_id ?? view.branchId} tableLabel={table?.table_label ?? null}
+                profile={profile} menuHref={view.path()} orderPath={view.path("/order/{key}")} />
+    </div>
+  );
+}
+
+/** Live tracking for whoever holds the order's link (guest or signed in). */
+export async function renderOrder(restaurantId: string, publicKey: string, basePath: string, search: Search) {
+  if (!/^[A-Za-z0-9_-]{22,64}$/.test(publicKey)) notFound();
+  const data = await load(restaurantId, false);
+  if ("unavailable" in data) return <Unavailable name={data.unavailable} locale={search.lang ?? "en"} />;
+  const p = await props(data, basePath, search, false, `${basePath}/order/${publicKey}`);
+  const supabase = await createClient();
+  const { data: order } = await supabase.rpc("track_order", { p_public_key: publicKey });
+  const tracked = order as unknown as (TrackedOrder & { restaurant_id: string }) | null;
+  if (!tracked || tracked.restaurant_id !== restaurantId) notFound();
+  const { view } = p;
+  return (
+    <div className={`gm-site gm-t-${data.website.template}`} dir={view.dir} lang={view.locale} data-template={data.website.template}>
+      <OrderTracker publicKey={publicKey} order={tracked} locale={view.locale} s={p.s} menuHref={view.path()} signedIn={p.ctx.signedIn} />
+    </div>
+  );
 }
 
 /** SEO: per-language title/description, social image, canonical address (custom domain first). */

@@ -7,8 +7,10 @@ import { ActionForm } from "@/components/action-form";
 import { AuthShell } from "@/components/auth-shell";
 import { RowAction } from "@/components/row-action";
 import { SubmitButton } from "@/components/submit-button";
-import { getDictionary } from "@/lib/i18n";
+import { fmt, getDictionary } from "@/lib/i18n";
 import { publicMediaUrl } from "@/lib/media/url";
+import { money } from "@/lib/site/money";
+import { siteStrings } from "@/lib/site/strings";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "My account", robots: { index: false } };
@@ -18,16 +20,24 @@ type Favorite = {
   item_id: string | null; item_name: Record<string, string> | null; default_locale: string;
 };
 
+type MyOrder = {
+  public_key: string; number: number; status: string; payment_status: string; total_minor: number; currency: string;
+  created_at: string; restaurant_name: string; slug: string;
+};
+
 /** The diner's universal account (spec §12): profile, preferences, favorites, privacy controls. */
 export default async function DinerAccount() {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/me/login?next=/me");
   const { locale, t } = await getDictionary();
-  const [{ data: profile }, { data: favs }] = await Promise.all([
+  const [{ data: profile }, { data: favs }, { data: orderRows }] = await Promise.all([
     supabase.from("profiles").select("full_name, phone_e164, locale, analytics_opt_out, marketing_opt_in").eq("id", auth.user.id).single(),
     supabase.rpc("my_favorites"),
+    supabase.rpc("my_orders", { p_limit: 20 }),
   ]);
+  const orders = (orderRows ?? []) as unknown as MyOrder[];
+  const site = siteStrings(locale);
   const favorites = (favs ?? []) as unknown as Favorite[];
   const label = (f: Favorite) => (f.item_name ? f.item_name[locale] || f.item_name[f.default_locale] || Object.values(f.item_name)[0] : null);
 
@@ -35,6 +45,29 @@ export default async function DinerAccount() {
     <AuthShell>
       <div className="grid gap-4">
         <h1 className="text-2xl font-semibold">{t.diner.title}</h1>
+        <Card>
+          <CardHeader><CardTitle as="h2" className="text-base">{t.diner.orders}</CardTitle></CardHeader>
+          <CardContent>
+            {orders.length ? (
+              <ul className="grid gap-2">
+                {orders.map((o) => (
+                  <li key={o.public_key} data-testid="my-order">
+                    <Link href={`/${o.slug}/order/${o.public_key}`} className="flex items-center justify-between gap-2 rounded-md p-1 hover:bg-muted">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{o.restaurant_name} · {fmt(t.diner.orderNumber, { n: o.number })}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {new Date(o.created_at).toLocaleString(locale === "ar" ? "ar-OM" : "en-GB", { dateStyle: "medium", timeStyle: "short" })}
+                          {" · "}{site.order.steps[o.status === "new" ? "placed" : o.status] ?? o.status}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-sm">{money(o.total_minor, o.currency, locale)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-sm text-muted-foreground">{t.diner.noOrders}</p>}
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader><CardTitle as="h2" className="text-base">{t.diner.favorites}</CardTitle></CardHeader>
           <CardContent>
@@ -84,7 +117,6 @@ export default async function DinerAccount() {
         </Card>
         <Card>
           <CardContent className="grid gap-3 pt-6">
-            <p className="text-sm text-muted-foreground">{t.diner.orders}</p>
             <p className="text-sm text-muted-foreground">{t.diner.deleteBody}</p>
             <ActionForm action={deleteMyDinerData}>
               <div><SubmitButton variant="outline" size="sm">{t.diner.deleteData}</SubmitButton></div>

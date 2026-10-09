@@ -3,6 +3,7 @@ import Link from "next/link";
 import { fmt } from "@/lib/i18n";
 import { publicMediaUrl } from "@/lib/media/url";
 import type { SiteView } from "@/lib/site/data";
+import { money } from "@/lib/site/money";
 import { intlLocale, type SiteStrings } from "@/lib/site/strings";
 import type { SiteBranch, SiteItem, TableContext } from "@/lib/site/types";
 import { FavoriteButton, FramesBar, type GoBranch, GoButton, PromotionTracker, ShareButton } from "./client";
@@ -23,13 +24,7 @@ export interface SiteProps {
 
 // --- Formatting ------------------------------------------------------------------------------
 
-const EXP: Record<string, number> = { OMR: 3, BHD: 3, KWD: 3 };
-export function money(minor: number, currency: string, locale: string) {
-  const exp = EXP[currency] ?? 2;
-  return new Intl.NumberFormat(intlLocale(locale), {
-    style: "currency", currency, minimumFractionDigits: minor % 10 ** exp === 0 ? 0 : exp, maximumFractionDigits: exp,
-  }).format(minor / 10 ** exp);
-}
+export { money };
 
 export function priceLabel(item: SiteItem, p: SiteProps) {
   const { currency } = p.view.data.restaurant;
@@ -367,7 +362,6 @@ export function About({ p, className }: { p: SiteProps; className?: string }) {
 export function Footer({ p, className }: { p: SiteProps; className?: string }) {
   return (
     <footer className={cn("px-4 py-8 text-center text-xs opacity-60", className)}>
-      {p.view.data.website.ordering_enabled ? <p className="mb-2">{p.s.orderingSoon}</p> : null}
       <p>© {p.view.data.restaurant.name} · {p.s.poweredBy}</p>
     </footer>
   );

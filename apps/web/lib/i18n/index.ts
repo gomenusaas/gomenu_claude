@@ -16,7 +16,4 @@ export async function getDictionary(): Promise<{ locale: Locale; t: Dictionary }
   return { locale, t: locale === "ar" ? ar : en };
 }
 
-/** Replace {placeholders} in a message. */
-export function fmt(message: string, values: Record<string, string | number>) {
-  return message.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
-}
+export { fmt } from "./text";

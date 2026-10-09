@@ -599,7 +599,9 @@ export const en = {
     deleteData: "Delete my favorites and preferences",
     deleteBody: "Removes your favorites, unlinks your past visits from your account and turns off offers.",
     deleted: "Your data was deleted.",
-    orders: "Your past and saved orders will appear here once ordering launches.",
+    orders: "Your orders",
+    noOrders: "Orders you place while signed in appear here.",
+    orderNumber: "Order #{n}",
     remove: "Remove",
   },
   promotions: {

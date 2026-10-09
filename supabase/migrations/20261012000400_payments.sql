@@ -342,7 +342,6 @@ begin
   values (v_o.restaurant_id, v_o.branch_id, v_o.id, v_c.id, 'online', 'pending', v_o.total_minor, v_o.currency)
   returning * into v_p;
   perform private.add_order_event(v_o, 'payment_started', jsonb_build_object('payment_id', v_p.id));
-  perform public.track_event(v_o.restaurant_id, 'checkout_started', null, v_o.id, v_o.branch_id, v_o.qr_code_id);
   return jsonb_build_object('payment_id', v_p.id, 'amount_minor', v_p.amount_minor, 'currency', v_p.currency,
                             'gateway', (select g.key from public.payment_gateways g where g.id = v_c.gateway_id),
                             'provider', (select g.provider from public.payment_gateways g where g.id = v_c.gateway_id),

@@ -28,8 +28,8 @@ async function resolveHost(host: string): Promise<Resolved> {
 }
 
 /**
- * 1. Custom domains (spec §7): https://www.myrestaurant.com/ and /item/* are served from the
- *    restaurant's site; requests to a non-primary domain redirect to the primary one.
+ * 1. Custom domains (spec §7): https://www.myrestaurant.com/, /item/*, /checkout and /order/* are
+ *    served from the restaurant's site; requests to a non-primary domain redirect to the primary one.
  * 2. Refreshes the Supabase session cookie. It makes no authorization decisions: pages ask the
  *    database (get_my_context / RLS) what the user may see.
  */
@@ -37,7 +37,8 @@ export async function proxy(request: NextRequest) {
   let rewrite: URL | null = null;
   const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(":")[0].toLowerCase();
   const path = request.nextUrl.pathname;
-  if (host && !isAppHost(host) && (path === "/" || path.startsWith("/item/"))) {
+  const sitePath = path === "/" || path === "/checkout" || path.startsWith("/item/") || path.startsWith("/order/");
+  if (host && !isAppHost(host) && sitePath) {
     const site = await resolveHost(host);
     if (!site) return new NextResponse("Not found", { status: 404 });
     if (site.canonical_host && site.canonical_host !== host) {

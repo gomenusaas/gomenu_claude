@@ -111,8 +111,12 @@ export interface SiteData {
 
 export type SiteResult = SiteData | { status: "unavailable"; restaurant: { name: string; slug: string } } | null;
 
-/** QR/table context carried from /q/{token} (shown to the diner; ordering uses it in Phase 5). */
+/**
+ * QR/table context carried from /q/{token}. Shown to the diner; ordering sends the token back
+ * to place_order, which resolves the table itself (ids in the cookie are never trusted).
+ */
 export interface TableContext {
+  token?: string;
   restaurant_id: string;
   qr_code_id: string;
   branch_id: string | null;

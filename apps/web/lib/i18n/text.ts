@@ -32,3 +32,8 @@ export function markEdited(meta: unknown, before: unknown, after: I18nText): Rec
   }
   return m;
 }
+
+/** Fill {placeholders} in a UI message. Safe in client components. */
+export function fmt(message: string, values: Record<string, string | number>) {
+  return message.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
+}

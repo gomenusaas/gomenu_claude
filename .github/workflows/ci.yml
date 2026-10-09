@@ -22,6 +22,7 @@ jobs:
       GOMENU_DEV_OUTBOX: "true"
       # Test-only key (not a secret) and the deterministic AI / domain stand-ins.
       GOMENU_SESSION_KEY: AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=
+      GOMENU_PAYMENTS_KEY: ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8=
       GOMENU_AI_PROVIDER: fake
       CRON_SECRET: ci-cron-secret
     steps:

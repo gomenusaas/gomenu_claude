@@ -3,6 +3,7 @@ import Link from "next/link";
 import { fmt } from "@/lib/i18n";
 import { publicMediaUrl } from "@/lib/media/url";
 import type { SiteItem } from "@/lib/site/types";
+import { AddToCart, CartBar } from "./cart";
 import { FavoriteButton, ShareButton, Tracker } from "./client";
 import { Img, money, PreviewBanner, priceLabel, type SiteProps, TableBanner } from "./parts";
 
@@ -14,11 +15,22 @@ export function ItemDetail({ p, item }: { p: SiteProps; item: SiteItem & { soldO
   const name = view.tx(item.name);
   const images = item.media.filter((m) => m.kind === "image");
   const video = item.media.find((m) => m.kind === "video");
+  const ordering = view.data.website.ordering_enabled && !p.ctx.preview;
+  const canAdd = ordering && !item.soldOut;
+  // Names and prices rendered here, so the client component needs no translation logic.
+  const tx = Object.fromEntries([
+    ...item.variants.map((v) => [v.id, view.tx(v.name)]),
+    ...item.option_groups.flatMap((g) => [[g.id, view.tx(g.name)], ...g.options.map((o) => [o.id, view.tx(o.name)])]),
+  ]);
+  const price = Object.fromEntries([
+    ...item.variants.map((v) => [v.id, money(v.price_minor, r.currency, view.locale)]),
+    ...item.option_groups.flatMap((g) => g.options.map((o) => [o.id, money(o.price_delta_minor, r.currency, view.locale)])),
+  ]);
   return (
     <div className={`gm-site gm-t-${key}`} dir={view.dir} lang={view.locale} data-template={key}>
       <PreviewBanner p={p} />
       <TableBanner p={p} />
-      <div className="mx-auto grid max-w-2xl gap-5 pb-10">
+      <div className="mx-auto grid max-w-2xl gap-5 pb-24">
         <div className="flex items-center justify-between px-4 pt-4">
           <Link href={view.path()} className="gm-chip min-w-0 max-w-[45%]" data-testid="item-back"><span className="truncate">← {r.name}</span></Link>
           <div className="flex items-center gap-2">
@@ -56,7 +68,13 @@ export function ItemDetail({ p, item }: { p: SiteProps; item: SiteItem & { soldO
                  className="mx-4 rounded-[var(--gm-radius-lg)]" />
         ) : null}
 
-        {item.variants.length > 1 ? (
+        {canAdd ? (
+          <AddToCart restaurantId={r.id} item={item} tx={tx} price={price} branchId={view.branchId} locale={view.locale}
+                     labels={{ ...s.order, required: s.required, optional: s.optional, choose: s.choose, chooseUpTo: s.chooseUpTo,
+                               requiredMissing: s.order.errors.OPTIONS_REQUIRED }} />
+        ) : null}
+
+        {!canAdd && item.variants.length > 1 ? (
           <section className="mx-4 gm-card p-4">
             <ul className="grid gap-1">
               {item.variants.map((v) => (
@@ -67,7 +85,7 @@ export function ItemDetail({ p, item }: { p: SiteProps; item: SiteItem & { soldO
           </section>
         ) : null}
 
-        {item.option_groups.map((g) => (
+        {!canAdd && item.option_groups.map((g) => (
           <section key={g.id} className="mx-4 gm-card p-4" aria-labelledby={`g-${g.id}`}>
             <div className="mb-2 flex items-baseline justify-between gap-2">
               <h2 id={`g-${g.id}`} className="font-semibold">{view.tx(g.name)}</h2>
@@ -96,6 +114,10 @@ export function ItemDetail({ p, item }: { p: SiteProps; item: SiteItem & { soldO
       </div>
       <Tracker restaurantId={r.id} locale={view.locale} branchId={view.branchId} disabled={p.ctx.preview}
                events={[{ type: "item_view", entityId: item.id }]} />
+      {ordering ? (
+        <CartBar restaurantId={r.id} href={view.path("/checkout")} label={s.order.viewOrder} itemsLabel={s.order.items} oneItemLabel={s.order.oneItem}
+                 currency={r.currency} locale={view.locale} />
+      ) : null}
     </div>
   );
 }

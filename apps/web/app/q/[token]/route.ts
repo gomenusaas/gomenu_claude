@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * spec §9: QR codes encode only a random token. It is resolved here, server-side, so slug or
  * domain changes never require reprinting. A table QR stores table context for this visit
- * (shown to the diner; ordering uses it in Phase 5). It proves context, not physical presence.
+ * (shown to the diner; table orders send the token back). It proves context, not physical presence:
+ * waiters confirm table orders (spec §10).
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const response = NextResponse.redirect(target, 307);
   if (qr.kind === "table") {
     const context: TableContext = {
-      restaurant_id: qr.restaurant_id, qr_code_id: qr.qr_code_id, branch_id: qr.branch_id,
+      token, restaurant_id: qr.restaurant_id, qr_code_id: qr.qr_code_id, branch_id: qr.branch_id,
       table_id: qr.table_id, table_label: qr.table_label,
     };
     response.cookies.set(TABLE_COOKIE, JSON.stringify(context), { path: "/", maxAge: 4 * 60 * 60, sameSite: "lax", httpOnly: true });
