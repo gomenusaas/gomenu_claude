@@ -6,13 +6,11 @@ import { RowAction } from "@/components/row-action";
 import { SubmitButton } from "@/components/submit-button";
 import { requireUser } from "@/lib/auth/context";
 import type { DnsRecord } from "@/lib/domains/provider";
-import { syncDomain } from "@/lib/domains/sync";
+import { syncStaleDomains } from "@/lib/domains/sync";
 import { fmt, getDictionary } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Website" };
-
-const PENDING = ["not_connected", "dns_required", "verifying", "connected", "ssl_pending"];
 
 export default async function WebsitePage({ params }: { params: Promise<{ restaurantId: string }> }) {
   const { restaurantId } = await params;
@@ -32,10 +30,7 @@ export default async function WebsitePage({ params }: { params: Promise<{ restau
 
   // Pending domains are re-checked when the page is viewed (at most once a minute); a daily cron covers the rest.
   let { data: domains } = await supabase.from("restaurant_domains").select("*").eq("restaurant_id", restaurantId).order("created_at");
-  const stale = (domains ?? []).filter((d) => PENDING.includes(d.status)
-    && (!d.last_checked_at || Date.now() - new Date(d.last_checked_at).getTime() > 60_000));
-  if (stale.length) {
-    await Promise.all(stale.map((d) => syncDomain(d)));
+  if (await syncStaleDomains(domains ?? [])) {
     ({ data: domains } = await supabase.from("restaurant_domains").select("*").eq("restaurant_id", restaurantId).order("created_at"));
   }
 

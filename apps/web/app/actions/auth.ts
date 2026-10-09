@@ -61,7 +61,7 @@ function safeNext(next: string): string | null {
 }
 
 /** Re-authentication (decision P3-Q6): a fresh OTP to the person's own verified number. */
-export async function sendReauthOtp(_: FormState): Promise<FormState> {
+export async function sendReauthOtp(): Promise<FormState> {
   const { t } = await getDictionary();
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_my_context");

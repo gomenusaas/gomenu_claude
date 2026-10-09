@@ -18,3 +18,15 @@ export async function syncDomain(domain: { id: string; hostname: string }, mode:
   });
   return result;
 }
+
+const PENDING = ["not_connected", "dns_required", "verifying", "connected", "ssl_pending"];
+
+/** Re-check domains still being set up, at most once a minute each. Returns whether any were checked. */
+export async function syncStaleDomains(
+  domains: { id: string; hostname: string; status: string; last_checked_at: string | null }[],
+): Promise<boolean> {
+  const stale = domains.filter((d) => PENDING.includes(d.status)
+    && (!d.last_checked_at || Date.now() - new Date(d.last_checked_at).getTime() > 60_000));
+  await Promise.all(stale.map((d) => syncDomain(d)));
+  return stale.length > 0;
+}
